@@ -435,27 +435,148 @@
       </div>
     </section>
 
-    <!-- Section 6: Methodology & Anonymization Protocol -->
+    <!-- Section 6: Comprehensive Methodology & Collection Infrastructure -->
     <section>
-      <h2>Methodology & Privacy Protocol</h2>
+      <h2>Comprehensive Methodology & Collection Infrastructure</h2>
       <p>
-        <strong>Data Extraction Pipeline:</strong> Data was acquired using the GitHub REST API across all 25 pages of public forks of <code>nightscout/Trio</code>. For each repository, the <code>build_trio.yml</code> workflow endpoint was queried, capturing full run metadata. All failed or cancelled runs were subsequently evaluated via the Jobs API and Check-Runs API.
+        Conducting an exhaustive census across thousands of independent repositories requires balancing data depth, transactional integrity, and strict adherence to GitHub API rate limits and abuse prevention policies. Below is the detailed architecture and execution methodology used in this study.
       </p>
+
+      <div class="metrics-grid" style="margin-bottom: 1.5rem;">
+        <div class="card">
+          <div class="card-title">Collection Tooling</div>
+          <div class="card-value" style="font-size: 1.3rem;">Python 3 + SQLite WAL</div>
+          <div class="card-sub">Standard library, zero cloud dependencies</div>
+        </div>
+        <div class="card">
+          <div class="card-title">API Authentication</div>
+          <div class="card-value" style="font-size: 1.3rem;">GitHub CLI Token</div>
+          <div class="card-sub">GitHub REST API v3 (repo scope)</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Hourly Quota Ceiling</div>
+          <div class="card-value" style="font-size: 1.3rem;">5,000 req / hr</div>
+          <div class="card-sub">Dynamically tracked per response header</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Total Inspected Calls</div>
+          <div class="card-value" style="font-size: 1.3rem;">16,706 calls</div>
+          <div class="card-sub">Zero rate limit bans or 403 lockouts</div>
+        </div>
+      </div>
+
+      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">1. Two-Stage Research Pipeline</h3>
       <p>
-        <strong>Diagnostic Criteria for Runner Lack:</strong> A workflow run was classified as a runner lack failure if and only if:
+        The study was conducted in two coordinated phases:
       </p>
       <ul style="margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1;">
-        <li>A macOS target job (<code>macos-26</code>, <code>macos-15</code>, <code>macos-14</code>) finished with status <code>cancelled</code>, <code>failure</code>, or <code>timed_out</code>; AND</li>
-        <li><code>runner_id == 0</code> or <code>runner_name == ""</code> (indicating no VM host was ever bound); OR</li>
-        <li>Check-run annotations explicitly contained <em>"The job was not acquired by Runner of type hosted even after multiple attempts"</em> or <em>"Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."</em></li>
+        <li><strong>Pilot Sampling (Validation Phase):</strong> An initial sample of 400 forks (2,740 workflow runs) was collected to validate the hypothesis, verify endpoint structures, and identify the exact diagnostic signatures that GitHub Actions emits when macOS runners are starved (e.g. check-run annotations and unassigned <code>runner_id: 0</code> metadata).</li>
+        <li><strong>Exhaustive Population Census (Scaling Phase):</strong> The pipeline was expanded to 100% of the population, paginating through all 25 pages of forks on <code>nightscout/Trio</code> (2,437 unique repositories) and extracting all 41,410 historical <code>Build Trio</code> workflow runs.</li>
       </ul>
+
+      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">2. Throttling, Pacing & Rate Limit Management</h3>
       <p>
-        <strong>PII Anonymization Protocol:</strong> In strict compliance with privacy best practices, all personal identifiable information has been redacted:
+        GitHub enforces a strict primary quota of <strong>5,000 authenticated requests per rolling hour</strong>, alongside automated anti-abuse / secondary rate limit detection (which penalizes rapid bursts or excessive concurrent TCP connections). To ensure continuous, non-disruptive execution without triggering secondary 403 or 429 lockouts, we used a two-tier throttling architecture:
+      </p>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Collector Stage</th>
+              <th>Concurrency</th>
+              <th>Pacing / Inter-Request Delay</th>
+              <th>Throughput</th>
+              <th>% of Quota</th>
+              <th>Purpose & Operations</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>Phase 1: 12-Hour Smear Daemon</strong><br><code>census_collector.py</code></td>
+              <td>1 Worker (Single-Threaded)</td>
+              <td>4.2s sleep ± 0.4s randomized jitter</td>
+              <td>~830 – 850 req / hr</td>
+              <td>~16.8%</td>
+              <td>Gentle overnight collection: indexed all 2,437 forks, captured all 41,410 runs, and inspected initial 5,910 failures. Jitter ensured human-like non-periodic traffic.</td>
+            </tr>
+            <tr>
+              <td><strong>Phase 2: Accelerated Collector</strong><br><code>fast_census_collector.py</code></td>
+              <td>8 Workers (Thread Pool)</td>
+              <td>Centralized Token-Bucket Limiter (0.95s min aggregate delay)</td>
+              <td>~3,600 – 3,780 req / hr</td>
+              <td>~75.0%</td>
+              <td>High-throughput accelerated inspection of remaining 8,358 failures across 2 rolling rate windows, staying well below the 5,000/hr cap.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="callout">
+        <div class="callout-title">The Dynamic Rate Guardian Mechanism</div>
+        On every HTTP response, the collector extracted <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code> from response headers. If the remaining quota dipped below 80 requests in any rolling hour, all worker threads were automatically placed into a synchronized sleep state until <code>X-RateLimit-Reset + 5.0s</code>, resuming automatically once GitHub restored the full 5,000 allowance. In addition, an exponential backoff handler intercepted any transient 403/429 responses.
+      </div>
+
+      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">3. Persistent Storage & Crash Resilience</h3>
+      <p>
+        To guarantee zero data loss over multi-hour runs, all state was stored in a local SQLite database (<code>census_trio.db</code>):
       </p>
       <ul style="margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1;">
-        <li>Zero personal GitHub usernames, email addresses, or repository URLs are included in exported datasets.</li>
-        <li>All records are aggregated into temporal bins (hourly, daily, monthly) and categorical failure distributions.</li>
-        <li>Raw reproduction data files are provided strictly as anonymized aggregated tables in the <code>data/</code> folder.</li>
+        <li><strong>Write-Ahead Logging (WAL Mode):</strong> Enabled via <code>PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;</code> to eliminate database locking issues between concurrent worker threads and allow seamless real-time querying while collecting.</li>
+        <li><strong>Transactional Checkpoints:</strong> Every inspected workflow run and its associated job steps were committed immediately, allowing the collector to be paused, resumed, or killed at any moment without re-querying already processed runs.</li>
+        <li><strong>Smart Priority Queue:</strong> Uninspected failures were prioritized using SQL ordering: manual user runs (<code>workflow_dispatch</code>) and runs with positive queuing delays (<code>queue_duration_mins > 0</code>) were processed first, ensuring capacity drops were surfaced rapidly before batch scheduled runs.</li>
+      </ul>
+
+      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">4. Diagnostic Criteria for Failure Classification</h3>
+      <p>
+        Every one of the 14,269 non-successful workflow runs was categorized using a deterministic step-by-step diagnostic tree:
+      </p>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Classification</th>
+              <th>Diagnostic Rule / Matching Logic</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr style="background: rgba(248, 113, 113, 0.1);">
+              <td><strong style="color: var(--danger);">Lack of macOS Runner</strong></td>
+              <td>
+                1. Job targeted a macOS runner label (<code>macos-26</code>, <code>macos-15</code>, <code>macos-14</code>, <code>xcode-27</code>) AND status was <code>cancelled</code>, <code>failure</code>, or <code>timed_out</code>;<br>
+                2. AND (<code>runner_id == 0</code> OR <code>runner_name == ""</code> with empty step list <code>steps: []</code>);<br>
+                3. OR Check-run annotations explicitly contained <em>"The job was not acquired by Runner of type hosted even after multiple attempts"</em> or <em>"Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."</em>;<br>
+                4. OR Job failed at step <code>Set up job</code> with host provisioning failure.
+              </td>
+            </tr>
+            <tr>
+              <td><strong>Scheduled No-Op Skip</strong></td>
+              <td>Job <code>Cancel run when there is nothing to build</code> has conclusion <code>cancelled</code> AND the subsequent <code>Build</code> job was <code>skipped</code>. (Normal Sunday no-update cancellation; excluded from failure totals).</td>
+            </tr>
+            <tr>
+              <td><strong>Fastlane Archive / Xcode</strong></td>
+              <td>Step <code>Fastlane Build & Archive</code> failed with exit code 65, 70, or compiler error.</td>
+            </tr>
+            <tr>
+              <td><strong>Secrets & Auth Failures</strong></td>
+              <td>Step <code>Validate Fastlane Secrets</code> or <code>Validate Access Token</code> failed due to missing or expired API keys or Match passwords.</td>
+            </tr>
+            <tr>
+              <td><strong>TestFlight Upload Failure</strong></td>
+              <td>Step <code>Fastlane upload to TestFlight</code> failed during Apple Transporter delivery.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">5. Data Privacy & PII Redaction Protocol</h3>
+      <p>
+        In accordance with research ethics and data protection standards:
+      </p>
+      <ul style="margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1;">
+        <li><strong>Zero Personal Identifiers:</strong> All GitHub usernames, personal fork URLs, user profile handles, email addresses, and specific commit SHAs were stripped from the published datasets.</li>
+        <li><strong>Aggregated Reproduction Tables:</strong> All data in the repository's <code>data/</code> folder is published purely in aggregate formats (hourly 24h bins, day-of-week sums, monthly trends, and failure category counts).</li>
+        <li><strong>Public Reproducibility:</strong> The methodology and SQL queries are fully documented to allow researchers to reproduce the aggregate figures independently against public GitHub APIs.</li>
       </ul>
     </section>
 
