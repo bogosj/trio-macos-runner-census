@@ -1,0 +1,32 @@
+{
+  "window_length_weeks": 4,
+  "window_length_days": 28,
+  "recent_window": {
+    "start": "2026-10-01",
+    "end": "2026-10-28"
+  },
+  "prior_window": {
+    "start": "2026-09-03",
+    "end": "2026-09-30"
+  },
+  "recent_metrics": {
+    "total_runs": 5323,
+    "dispatch_runs": 2368,
+    "runner_lack_total": 176,
+    "runner_lack_dispatch": 175,
+    "overall_failure_rate_pct": 3.31,
+    "dispatch_failure_rate_pct": 7.39
+  },
+  "prior_metrics": {
+    "total_runs": 7957,
+    "dispatch_runs": 2947,
+    "runner_lack_total": 27,
+    "runner_lack_dispatch": 27,
+    "overall_failure_rate_pct": 0.34,
+    "dispatch_failure_rate_pct": 0.92
+  },
+  "deltas": {
+    "failure_count_growth_pct": 551.9,
+    "failure_rate_multiplier": 8.07
+  }
+}

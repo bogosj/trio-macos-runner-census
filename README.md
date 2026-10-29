@@ -20,6 +20,43 @@ This project investigates the availability, queue contention, and time-of-day fa
   * However, Sunday experiences the lowest failure rate across the entire week (**0.25%**) because `build_trio.yml` executes pre-flight checks on `ubuntu-latest` and cancels early before ever requesting a macOS runner.
 * **Longitudinal Inflection (October 2026):**
   * The migration to Apple Silicon **`macos-26`** in October 2026 triggered a sharp recurrence of queue timeouts (176 failures; 44.5% of all runner-starvation events in project history).
+* **Recent 4-Week Crisis vs. Prior 4-Week Baseline:**
+  * Comparing the **Recent 4-Week Window (Oct 1 – Oct 28)** against the **Prior 4-Week Baseline (Sep 3 – Sep 30)** reveals an acute **+551.9% surge in runner starvation failures** (jumping from 27 to 176).
+  * Manual build failure rate jumped **8.0x** (from 0.92% to 7.39%).
+  * During peak hours (14:00 – 16:00 UTC), failure rates exploded from ~1% to **18.4% – 21.9%** (over 1 in 5 builds failing).
+
+---
+
+## 🔍 Comparative Window Analysis (Recent 4 Weeks vs. Prior 4 Weeks)
+
+### Identification of the 4-Week Optimal Window
+
+To identify the optimal comparison window, we evaluated candidate spans of 4, 5, and 6 weeks against the weekly progression of failures:
+
+* **Why 4 Weeks (28 Days) is the Optimal Boundary:** Throughout September 2026 (Weeks 8–5), runner failure rates remained at a stable background baseline of 0.5%–1.3% (averaging 0.92%). Starting October 1 (Week 4), failure rates climbed progressively, culminating in a critical surge in **Weeks 2 and 1 (15.63% and 12.78%)**.
+* Isolating **October 1 to October 28 (Recent 4 Weeks)** against **September 3 to September 30 (Prior 4 Weeks)** captures the exact phase transition from stability to crisis. Expanding the window to 5 or 6 weeks blends quiescent September weeks into the recent period, diluting the measured escalation from +552% down to +394%.
+
+### Weekly Failure Progression (Last 8 Weeks)
+
+| Week | Date Range | Total Runs | Manual Dispatches | Runner Starvations | Failure Rate (%) | Operational Status |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- |
+| **W-08** | 2026-09-03 to 2026-09-09 | 1,755 | 361 | 4 | 1.11% | Baseline |
+| **W-07** | 2026-09-10 to 2026-09-16 | 2,204 | 1,188 | 16 | 1.35% | Baseline |
+| **W-06** | 2026-09-17 to 2026-09-23 | 2,262 | 1,014 | 5 | 0.49% | Baseline |
+| **W-05** | 2026-09-24 to 2026-09-30 | 1,736 | 384 | 2 | 0.52% | Baseline |
+| **W-04** | 2026-10-01 to 2026-10-07 | 1,960 | 545 | 7 | 1.28% | Trio v1.0.2 Release |
+| **W-03** | 2026-10-08 to 2026-10-14 | 1,836 | 753 | 17 | 2.26% | Elevated |
+| **W-02** | 2026-10-15 to 2026-10-21 | 662 | 499 | **78** | **15.63%** | Critical Surge (PR #1639) |
+| **W-01** | 2026-10-22 to 2026-10-28 | 865 | 571 | **74** | **12.78%** | Critical Surge Sustained |
+
+### Peak Hour Escalation (14:00 – 17:00 UTC)
+
+| Hour (UTC) | Prior 4W Rate | Recent 4W Rate | Shift / Escalation |
+| :--- | :--- | :--- | :--- |
+| **14:00** | 0.0% | **18.4%** | From 0 failures to 1 in 5.4 builds failing |
+| **15:00** | 1.3% | **21.9%** | **16.8x surge (1 in 4.5 builds fail)** |
+| **16:00** | 0.0% | **20.0%** | From 0 failures to 1 in 5 builds failing |
+| **17:00** | 1.8% | **12.3%** | 6.8x surge |
 
 ---
 
@@ -28,13 +65,19 @@ This project investigates the availability, queue contention, and time-of-day fa
 ### 1. 24-Hour Diurnal Congestion Curve (UTC)
 ![Diurnal Curve](./assets/diurnal_curve.svg)
 
-### 2. Historical Timeline & Outages (2024–2026)
+### 2. Recent 4 Weeks vs. Prior 4 Weeks Hourly Comparison
+![Hourly Comparison Recent vs Prior](./assets/recent_vs_prior_4w_hourly.svg)
+
+### 3. 8-Week Progression of Runner Starvation
+![Weekly Progression](./assets/weekly_progression_8w.svg)
+
+### 4. Historical Timeline & Outages (2024–2026)
 ![Historical Timeline](./assets/timeline.svg)
 
-### 3. Population Outcome Distribution
+### 5. Population Outcome Distribution
 ![Outcome Distribution](./assets/outcomes_donut.svg)
 
-### 4. Day-of-Week Comparison
+### 6. Day-of-Week Comparison
 ![Day of Week Comparison](./assets/day_of_week.svg)
 
 ---
@@ -99,19 +142,27 @@ In accordance with privacy standards:
 ## 📁 Repository Structure
 
 ```
-├── index.html                     # Full interactive HTML report
-├── README.md                      # Overview and summary
+├── index.html                                  # Full interactive HTML report
+├── README.md                                   # Overview, findings, and methodology
 ├── assets/
-│   ├── diurnal_curve.svg          # 24-hour UTC activity and failure rate curve
-│   ├── timeline.svg               # Monthly executions vs runner starvations
-│   ├── outcomes_donut.svg         # Outcome breakdown (41,410 runs)
-│   └── day_of_week.svg            # Day-of-week failure rate comparison
-└── data/
-    ├── summary_metrics.json       # Population-level summary counts
-    ├── hourly_breakdown.csv       # Hourly UTC aggregations
-    ├── day_of_week_breakdown.csv  # Day-of-week aggregations
-    ├── monthly_timeline.csv       # Month-by-month history
-    └── failure_classifications.csv# Breakdown of all 14,269 failure causes
+│   ├── diurnal_curve.svg                       # 24-hour UTC activity and failure rate curve
+│   ├── recent_vs_prior_4w_hourly.svg           # Peak congestion escalation comparison
+│   ├── weekly_progression_8w.svg               # 8-week failure progression & boundary
+│   ├── timeline.svg                            # Monthly executions vs runner starvations
+│   ├── outcomes_donut.svg                      # Outcome breakdown (41,410 runs)
+│   └── day_of_week.svg                         # Day-of-week failure rate comparison
+├── data/
+│   ├── summary_metrics.json                    # Population-level summary counts
+│   ├── window_comparison_4w.json               # Recent 4W vs Prior 4W metrics & deltas
+│   ├── weekly_progression_8w.csv               # Week-by-week failure counts & rates
+│   ├── hourly_comparison_recent_vs_prior.csv   # Hourly comparison data
+│   ├── hourly_breakdown.csv                    # Full 24-hour UTC aggregations
+│   ├── day_of_week_breakdown.csv               # Day-of-week aggregations
+│   ├── monthly_timeline.csv                    # Month-by-month history
+│   └── failure_classifications.csv             # Breakdown of all 14,269 failure causes
+└── scripts/
+    ├── build_report_and_data.py                # Pipeline generator for full census data
+    └── generate_window_comparison.py           # Window comparison analysis generator
 ```
 
 ---

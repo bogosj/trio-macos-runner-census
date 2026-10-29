@@ -1,0 +1,9 @@
+week_index,start_date,end_date,total_runs,dispatch_runs,lack_total,lack_dispatch,dispatch_failure_rate_pct,status
+W-08,2026-09-03,2026-09-09,1755,361,4,4,1.11,Baseline
+W-07,2026-09-10,2026-09-16,2204,1188,16,16,1.35,Baseline
+W-06,2026-09-17,2026-09-23,2262,1014,5,5,0.49,Baseline
+W-05,2026-09-24,2026-09-30,1736,384,2,2,0.52,Baseline
+W-04,2026-10-01,2026-10-07,1960,545,7,7,1.28,Baseline
+W-03,2026-10-08,2026-10-14,1836,753,17,17,2.26,Elevated
+W-02,2026-10-15,2026-10-21,662,499,78,78,15.63,Critical Surge
+W-01,2026-10-22,2026-10-28,865,571,74,73,12.78,Critical Surge
