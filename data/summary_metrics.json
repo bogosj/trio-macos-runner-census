@@ -1,0 +1,13 @@
+{
+  "total_forks_indexed": 2437,
+  "total_workflow_runs": 41410,
+  "total_successful_runs": 27117,
+  "success_rate_pct": 65.48,
+  "total_failures_inspected": 14269,
+  "total_macos_runner_starvations": 395,
+  "runner_starvation_rate_pct": 0.95,
+  "date_range": {
+    "start": "2024-09-01",
+    "end": "2026-10-29"
+  }
+}

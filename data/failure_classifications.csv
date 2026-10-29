@@ -1,0 +1,38 @@
+failure_category,count,pct_of_failures,pct_of_total_runs
+fastlane_archive_failure,4154,29.11,10.03
+scheduled_no_updates_skip,2817,19.74,6.8
+macos_step_Validate Fastlane Secrets,1987,13.93,4.8
+macos_step_other,1745,12.23,4.21
+macos_step_Fastlane upload to TestFlight,914,6.41,2.21
+ubuntu_step_Access,653,4.58,1.58
+macos_step_Check Distribution certificate and launch Nuke certificates if needed,458,3.21,1.11
+lack_of_macos_runner,395,2.77,0.95
+unknown,329,2.31,0.79
+ubuntu_step_other,306,2.14,0.74
+macos_step_Set output and annotations based on Fastlane result,92,0.64,0.22
+ubuntu_step_Sync upstream changes,86,0.6,0.21
+macos_step_Checkout Repo for building,60,0.42,0.14
+macos_step_Validate Access Token,58,0.41,0.14
+macos_step_Customize Trio,35,0.25,0.08
+macos_step_Recreate Distribution certificate after nuking,34,0.24,0.08
+macos_step_Sync upstream changes,31,0.22,0.07
+ubuntu_step_Checkout target repo,25,0.18,0.06
+ubuntu_step_Check for alive branches,18,0.13,0.04
+jobs_inaccessible,15,0.11,0.04
+macos_step_Run Fastlane nuke_certs,11,0.08,0.03
+ubuntu_step_Set up job,10,0.07,0.02
+xcode_select_failure,9,0.06,0.02
+macos_step_Install Project Dependencies,9,0.06,0.02
+macos_step_Sync clock,3,0.02,0.01
+ubuntu_step_Validate Match-Secrets,2,0.01,0.0
+ubuntu_step_Fastlane Build & Archive,2,0.01,0.0
+macos_step_Checkout Repo,2,0.01,0.0
+ubuntu_step_Validate Access Token,1,0.01,0.0
+ubuntu_step_Cancel the run,1,0.01,0.0
+macos_step_Update Fastlane,1,0.01,0.0
+macos_step_Read existing family tester-group status,1,0.01,0.0
+macos_step_Patch Match Tables,1,0.01,0.0
+macos_step_Fastlane执行打包&上传TestFlight,1,0.01,0.0
+macos_step_Build reviewed LoopFollow with existing signing assets,1,0.01,0.0
+macos_step_Build Trio Workspace,1,0.01,0.0
+macos_step_Build Trio App,1,0.01,0.0

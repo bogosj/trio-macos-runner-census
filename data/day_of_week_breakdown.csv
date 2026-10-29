@@ -1,0 +1,8 @@
+day_of_week,total_runs,dispatch_runs,schedule_runs,runner_lack_total,runner_lack_dispatch,manual_failure_rate_pct
+Monday,1574,1477,89,36,36,2.44
+Tuesday,1753,1721,19,77,77,4.47
+Wednesday,3664,1626,2028,150,70,4.31
+Thursday,1403,1333,57,26,26,1.95
+Friday,1206,1157,45,19,19,1.64
+Saturday,1362,1275,69,11,11,0.86
+Sunday,30448,1916,28503,76,16,0.84
