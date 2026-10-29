@@ -19,7 +19,7 @@ This project investigates the availability, queue contention, and time-of-day fa
   * Sunday hosts **73.5% of all executions (30,448 runs)** due to automated weekly crons.
   * However, Sunday experiences the lowest failure rate across the entire week (**0.25%**) because `build_trio.yml` executes pre-flight checks on `ubuntu-latest` and cancels early before ever requesting a macOS runner.
 * **Longitudinal Inflection (October 2026):**
-  * The migration to Apple Silicon **`macos-26`** in October 2026 triggered a sharp recurrence of queue timeouts (176 failures; 44.5% of all runner-starvation events in project history).
+  * Global capacity strain on GitHub's shared Apple Silicon **`macos-26`** (arm64) runner fleet in October 2026 caused a sharp surge in queue timeouts (176 failures; 44.5% of all runner-starvation events in project history).
 * **Recent 4-Week Crisis vs. Prior 4-Week Baseline:**
   * Comparing the **Recent 4-Week Window (Oct 1 – Oct 28)** against the **Prior 4-Week Baseline (Sep 3 – Sep 30)** reveals an acute **+551.9% surge in runner starvation failures** (jumping from 27 to 176).
   * Manual build failure rate jumped **8.0x** (from 0.92% to 7.39%).
@@ -44,10 +44,10 @@ To identify the optimal comparison window, we evaluated candidate spans of 4, 5,
 | **W-07** | 2026-09-10 to 2026-09-16 | 2,204 | 1,188 | 16 | 1.35% | Baseline |
 | **W-06** | 2026-09-17 to 2026-09-23 | 2,262 | 1,014 | 5 | 0.49% | Baseline |
 | **W-05** | 2026-09-24 to 2026-09-30 | 1,736 | 384 | 2 | 0.52% | Baseline |
-| **W-04** | 2026-10-01 to 2026-10-07 | 1,960 | 545 | 7 | 1.28% | Trio v1.0.2 Release |
+| **W-04** | 2026-10-01 to 2026-10-07 | 1,960 | 545 | 7 | 1.28% | Baseline |
 | **W-03** | 2026-10-08 to 2026-10-14 | 1,836 | 753 | 17 | 2.26% | Elevated |
-| **W-02** | 2026-10-15 to 2026-10-21 | 662 | 499 | **78** | **15.63%** | Critical Surge (PR #1639) |
-| **W-01** | 2026-10-22 to 2026-10-28 | 865 | 571 | **74** | **12.78%** | Critical Surge Sustained |
+| **W-02** | 2026-10-15 to 2026-10-21 | 662 | 499 | **78** | **15.63%** | Critical Surge |
+| **W-01** | 2026-10-22 to 2026-10-28 | 865 | 571 | **74** | **12.78%** | Critical Surge |
 
 ### Peak Hour Escalation (14:00 – 17:00 UTC)
 

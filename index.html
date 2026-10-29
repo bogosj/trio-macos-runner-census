@@ -3,21 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>nightscout/Trio CI Census: Empirical Analysis of macOS Runner Starvation Patterns</title>
+  <title>nightscout/Trio CI Census — GitHub Actions macOS Runner Availability Report</title>
   <style>
     :root {
-      --bg: #0f172a;
+      --bg: #0b1120;
+      --bg-elevated: #111827;
       --card-bg: #1e293b;
+      --card-bg-hover: #243247;
       --card-border: #334155;
+      --border-subtle: rgba(148, 163, 184, 0.16);
       --text: #f8fafc;
+      --text-secondary: #cbd5e1;
       --text-muted: #94a3b8;
       --primary: #38bdf8;
-      --primary-hover: #0284c7;
+      --primary-strong: #0284c7;
+      --primary-soft: rgba(56, 189, 248, 0.12);
       --danger: #f87171;
+      --danger-strong: #ef4444;
+      --danger-soft: rgba(248, 113, 113, 0.12);
       --success: #34d399;
+      --success-strong: #10b981;
+      --success-soft: rgba(52, 211, 153, 0.12);
       --warning: #fbbf24;
-      --accent: #a855f7;
-      --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --warning-soft: rgba(251, 191, 36, 0.12);
+      --accent: #a78bfa;
+      --accent-soft: rgba(167, 139, 250, 0.14);
+      --radius-lg: 14px;
+      --radius-md: 10px;
+      --radius-sm: 6px;
+      --shadow-md: 0 10px 25px -5px rgba(0, 0, 0, 0.35), 0 8px 10px -6px rgba(0, 0, 0, 0.25);
+      --font-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
     }
 
     * {
@@ -26,88 +42,319 @@
       padding: 0;
     }
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body {
       background-color: var(--bg);
+      background-image: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.08), transparent 45%);
       color: var(--text);
-      font-family: var(--font);
-      line-height: 1.6;
-      padding: 2rem 1rem;
+      font-family: var(--font-sans);
+      line-height: 1.65;
+      padding: 0 1rem 4rem;
+      -webkit-font-smoothing: antialiased;
     }
 
     .container {
-      max-width: 1100px;
+      max-width: 1140px;
       margin: 0 auto;
     }
 
-    header {
-      margin-bottom: 2.5rem;
+    /* Top Masthead */
+    .masthead {
+      padding: 2.5rem 0 1.75rem;
       border-bottom: 1px solid var(--card-border);
-      padding-bottom: 1.5rem;
+      margin-bottom: 2rem;
     }
 
-    h1 {
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin-bottom: 0.5rem;
-      color: #ffffff;
-      letter-spacing: -0.025em;
+    .masthead-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+    }
+
+    .badge-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
 
     .badge {
-      display: inline-block;
-      padding: 0.25rem 0.6rem;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.7rem;
       border-radius: 9999px;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 600;
       text-transform: uppercase;
       letter-spacing: 0.05em;
+      border: 1px solid transparent;
     }
 
-    .badge-primary { background: rgba(56, 189, 248, 0.2); color: var(--primary); }
-    .badge-danger { background: rgba(248, 113, 113, 0.2); color: var(--danger); }
-    .badge-success { background: rgba(52, 211, 153, 0.2); color: var(--success); }
+    .badge-primary {
+      background: var(--primary-soft);
+      color: var(--primary);
+      border-color: rgba(56, 189, 248, 0.28);
+    }
+
+    .badge-danger {
+      background: var(--danger-soft);
+      color: var(--danger);
+      border-color: rgba(248, 113, 113, 0.28);
+    }
+
+    .badge-success {
+      background: var(--success-soft);
+      color: var(--success);
+      border-color: rgba(52, 211, 153, 0.28);
+    }
+
+    .badge-warning {
+      background: var(--warning-soft);
+      color: var(--warning);
+      border-color: rgba(251, 191, 36, 0.28);
+    }
+
+    .badge-accent {
+      background: var(--accent-soft);
+      color: var(--accent);
+      border-color: rgba(167, 139, 250, 0.28);
+    }
+
+    h1 {
+      font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+      font-weight: 800;
+      line-height: 1.2;
+      color: #ffffff;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.6rem;
+    }
 
     .subtitle {
-      color: var(--text-muted);
+      color: var(--text-secondary);
       font-size: 1.05rem;
-      margin-top: 0.5rem;
+      max-width: 880px;
+    }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 0.88em;
+      background: rgba(15, 23, 42, 0.75);
+      border: 1px solid var(--border-subtle);
+      padding: 0.15rem 0.4rem;
+      border-radius: 5px;
+      color: #e2e8f0;
+    }
+
+    /* Audience Tab Navigation */
+    .tabs-bar {
+      position: sticky;
+      top: 0.75rem;
+      z-index: 30;
+      background: rgba(15, 23, 42, 0.88);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 0.45rem;
+      margin-bottom: 2.25rem;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .tab-btn {
+      appearance: none;
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1.25rem;
+      color: var(--text-secondary);
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    .tab-btn:hover {
+      background: rgba(255, 255, 255, 0.04);
+      color: #ffffff;
+    }
+
+    .tab-btn:focus-visible {
+      outline: 2px solid var(--primary);
+      outline-offset: 2px;
+    }
+
+    .tab-btn[aria-selected="true"] {
+      background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(14, 165, 233, 0.08));
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+    }
+
+    .tab-btn-title {
+      font-size: 1rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .tab-btn-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .tab-btn[aria-selected="true"] .tab-btn-desc {
+      color: #bae6fd;
+    }
+
+    .tab-panel[hidden]:not([hidden="until-found"]) {
+      display: none;
     }
 
     /* Metric Cards */
     .metrics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 1.25rem;
-      margin-bottom: 2.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));
+      gap: 1.15rem;
+      margin-bottom: 2.25rem;
     }
 
     .card {
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1.5rem;
+      border-radius: var(--radius-lg);
+      padding: 1.35rem 1.5rem;
       box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
 
     .card-title {
-      font-size: 0.85rem;
+      font-size: 0.78rem;
       text-transform: uppercase;
       color: var(--text-muted);
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      margin-bottom: 0.5rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      margin-bottom: 0.45rem;
     }
 
     .card-value {
       font-size: 2rem;
       font-weight: 800;
       color: #fff;
+      line-height: 1.15;
+      font-variant-numeric: tabular-nums;
     }
 
     .card-sub {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       color: var(--text-muted);
-      margin-top: 0.25rem;
+      margin-top: 0.4rem;
+    }
+
+    /* Live Timezone Advisor Widget */
+    .advisor-panel {
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.5rem;
+      margin-bottom: 2.25rem;
+      box-shadow: var(--shadow-md);
+    }
+
+    .advisor-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding-bottom: 1.15rem;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 1.25rem;
+    }
+
+    .advisor-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      flex-wrap: wrap;
+    }
+
+    .advisor-select {
+      background: #0f172a;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+    }
+
+    .advisor-select:focus-visible {
+      outline: 2px solid var(--primary);
+    }
+
+    .advisor-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1rem;
+    }
+
+    .window-box {
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.25rem;
+      border: 1px solid var(--card-border);
+      background: rgba(15, 23, 42, 0.55);
+    }
+
+    .window-box.window-safe {
+      border-color: rgba(52, 211, 153, 0.4);
+      background: rgba(16, 185, 129, 0.08);
+    }
+
+    .window-box.window-avoid {
+      border-color: rgba(248, 113, 113, 0.4);
+      background: rgba(239, 68, 68, 0.08);
+    }
+
+    .window-box.window-now {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: rgba(56, 189, 248, 0.08);
+    }
+
+    .window-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      margin-bottom: 0.35rem;
+    }
+
+    .window-time {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 0.25rem;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .window-note {
+      font-size: 0.85rem;
+      color: var(--text-secondary);
     }
 
     /* Section Styling */
@@ -115,35 +362,67 @@
       margin-bottom: 3rem;
     }
 
-    h2 {
-      font-size: 1.5rem;
-      font-weight: 700;
+    .section-header {
       margin-bottom: 1.25rem;
-      color: #f1f5f9;
+    }
+
+    h2 {
+      font-size: 1.45rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.015em;
       display: flex;
       align-items: center;
-      gap: 0.5rem;
+      gap: 0.6rem;
+      margin-bottom: 0.4rem;
+    }
+
+    h3 {
+      color: #f1f5f9;
+      font-size: 1.12rem;
+      font-weight: 700;
+      margin: 1.5rem 0 0.65rem 0;
     }
 
     p {
       margin-bottom: 1rem;
-      color: #cbd5e1;
+      color: var(--text-secondary);
+    }
+
+    ul, ol {
+      margin-left: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--text-secondary);
+    }
+
+    li {
+      margin-bottom: 0.4rem;
     }
 
     /* Graphic display */
     .chart-container {
       background: #ffffff;
-      border-radius: 12px;
-      padding: 1rem;
+      border-radius: var(--radius-lg);
+      padding: 1.25rem;
       margin: 1.5rem 0;
       display: flex;
-      justify-content: center;
-      box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+      flex-direction: column;
+      align-items: center;
+      box-shadow: var(--shadow-md);
     }
 
     .chart-container img {
       max-width: 100%;
       height: auto;
+      display: block;
+    }
+
+    .chart-caption {
+      margin-top: 0.75rem;
+      font-size: 0.82rem;
+      color: #475569;
+      text-align: center;
+      max-width: 820px;
     }
 
     /* Tables */
@@ -151,8 +430,9 @@
       overflow-x: auto;
       background: var(--card-bg);
       border: 1px solid var(--card-border);
-      border-radius: 12px;
-      margin: 1.5rem 0;
+      border-radius: var(--radius-lg);
+      margin: 1.25rem 0;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15);
     }
 
     table {
@@ -163,21 +443,25 @@
     }
 
     th, td {
-      padding: 0.75rem 1rem;
+      padding: 0.8rem 1rem;
       border-bottom: 1px solid var(--card-border);
     }
 
+    tbody tr:last-child td {
+      border-bottom: none;
+    }
+
     th {
-      background: rgba(15, 23, 42, 0.6);
+      background: rgba(15, 23, 42, 0.65);
       color: #f8fafc;
       font-weight: 600;
       text-transform: uppercase;
-      font-size: 0.75rem;
+      font-size: 0.74rem;
       letter-spacing: 0.05em;
     }
 
-    tr:hover {
-      background: rgba(255, 255, 255, 0.02);
+    tbody tr:hover {
+      background: rgba(255, 255, 255, 0.025);
     }
 
     .num {
@@ -189,9 +473,10 @@
     .callout {
       border-left: 4px solid var(--primary);
       background: rgba(56, 189, 248, 0.08);
-      padding: 1rem 1.25rem;
-      border-radius: 0 8px 8px 0;
+      padding: 1.1rem 1.3rem;
+      border-radius: 0 var(--radius-md) var(--radius-md) 0;
       margin: 1.25rem 0;
+      color: var(--text-secondary);
     }
 
     .callout-danger {
@@ -204,15 +489,130 @@
       background: rgba(52, 211, 153, 0.08);
     }
 
+    .callout-warning {
+      border-left-color: var(--warning);
+      background: rgba(251, 191, 36, 0.08);
+    }
+
     .callout-title {
       font-weight: 700;
-      margin-bottom: 0.25rem;
-      color: #fff;
+      margin-bottom: 0.3rem;
+      color: #ffffff;
+      font-size: 0.98rem;
+    }
+
+    /* Developer Zippy (<details>) Accordions */
+    details.dev-zippy {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-md);
+      margin: 1.15rem 0;
+      overflow: hidden;
+      transition: border-color 0.18s ease;
+    }
+
+    details.dev-zippy:hover {
+      border-color: #475569;
+    }
+
+    details.dev-zippy[open] {
+      border-color: rgba(167, 139, 250, 0.5);
+      background: rgba(15, 23, 42, 0.85);
+    }
+
+    details.dev-zippy > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.9rem 1.15rem;
+      font-weight: 600;
+      font-size: 0.93rem;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      user-select: none;
+    }
+
+    details.dev-zippy > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    details.dev-zippy > summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+
+    .zippy-summary-left {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+
+    .zippy-chevron {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      transition: transform 0.2s ease;
+      flex-shrink: 0;
+    }
+
+    details.dev-zippy[open] .zippy-chevron {
+      transform: rotate(180deg);
+      color: var(--accent);
+    }
+
+    .zippy-body {
+      padding: 1rem 1.25rem 1.25rem;
+      border-top: 1px solid var(--border-subtle);
+      font-size: 0.92rem;
+      color: var(--text-secondary);
+    }
+
+    /* FAQ / Step Grid for Users */
+    .steps-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.15rem;
+      margin: 1.25rem 0;
+    }
+
+    .step-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius-lg);
+      padding: 1.35rem;
+    }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      font-weight: 800;
+      font-size: 0.85rem;
+      margin-bottom: 0.65rem;
+    }
+
+    .step-card h4 {
+      color: #ffffff;
+      font-size: 1.02rem;
+      margin-bottom: 0.45rem;
+    }
+
+    .step-card p {
+      font-size: 0.9rem;
+      margin-bottom: 0;
     }
 
     footer {
       border-top: 1px solid var(--card-border);
-      padding-top: 1.5rem;
+      padding-top: 1.75rem;
+      margin-top: 3.5rem;
       color: var(--text-muted);
       font-size: 0.85rem;
       display: flex;
@@ -229,583 +629,1093 @@
     a:hover {
       text-decoration: underline;
     }
+
+    @media (max-width: 680px) {
+      .tabs-bar {
+        grid-template-columns: 1fr;
+        position: static;
+      }
+      .card-value {
+        font-size: 1.65rem;
+      }
+    }
   </style>
 </head>
 <body>
   <div class="container">
-    <header>
-      <div style="display: flex; gap: 0.5rem; margin-bottom: 0.75rem;">
-        <span class="badge badge-primary">Empirical CI Census</span>
-        <span class="badge badge-success">100% Population</span>
-        <span class="badge badge-danger">macOS Capacity Study</span>
+    <header class="masthead">
+      <div class="masthead-top">
+        <div class="badge-group">
+          <span class="badge badge-primary">Empirical CI Census</span>
+          <span class="badge badge-success">2,437 Public Forks</span>
+          <span class="badge badge-danger">41,410 Workflow Runs</span>
+        </div>
+        <span style="font-size: 0.82rem; color: var(--text-muted);">Study Period: Sep 2024 – Oct 2026</span>
       </div>
-      <h1>macOS Runner Starvation in GitHub Actions</h1>
-      <div class="subtitle">A complete population census of 2,437 forks and 41,410 workflow runs from the <code>nightscout/Trio</code> ecosystem (2024–2026).</div>
+      <h1>GitHub Actions macOS Runner Availability in <code>nightscout/Trio</code></h1>
+      <p class="subtitle">
+        An exhaustive population census analyzing when and why cloud-hosted macOS builds fail across all 2,437 public forks of the Trio automated insulin delivery system.
+      </p>
     </header>
 
-    <!-- Key Metrics Grid -->
-    <div class="metrics-grid">
-      <div class="card">
-        <div class="card-title">Total Repositories</div>
-        <div class="card-value">2,437</div>
-        <div class="card-sub">100% public forks indexed</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Total Workflow Runs</div>
-        <div class="card-value">41,410</div>
-        <div class="card-sub">Build Trio (.github/workflows)</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Overall Success Rate</div>
-        <div class="card-value" style="color: var(--success);">65.5%</div>
-        <div class="card-sub">27,117 successful builds</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Runner Starvations</div>
-        <div class="card-value" style="color: var(--danger);">395</div>
-        <div class="card-sub">2.77% of all non-successful runs</div>
-      </div>
+    <!-- Audience Switcher Tabs -->
+    <div class="tabs-bar" role="tablist" aria-label="Report Audience View">
+      <button
+        type="button"
+        class="tab-btn"
+        role="tab"
+        id="tab-users"
+        aria-selected="true"
+        aria-controls="panel-users"
+        tabindex="0"
+      >
+        <span class="tab-btn-title">
+          <span>👤 For Trio Builders &amp; Users</span>
+          <span class="badge badge-success" style="font-size: 0.68rem; padding: 0.15rem 0.5rem;">Quick Guide</span>
+        </span>
+        <span class="tab-btn-desc">Best times of day to build in your timezone, plain-English explanations &amp; optional technical deep-dives</span>
+      </button>
+
+      <button
+        type="button"
+        class="tab-btn"
+        role="tab"
+        id="tab-devs"
+        aria-selected="false"
+        aria-controls="panel-devs"
+        tabindex="-1"
+      >
+        <span class="tab-btn-title">
+          <span>⚙️ For Developers &amp; Maintainers</span>
+          <span class="badge badge-primary" style="font-size: 0.68rem; padding: 0.15rem 0.5rem;">Full Telemetry</span>
+        </span>
+        <span class="tab-btn-desc">4-week vs. baseline window analysis, 8-week progression, failure taxonomy &amp; collection methodology</span>
+      </button>
     </div>
 
-    <!-- Section 1: Executive Summary -->
-    <section>
-      <h2>Executive Summary</h2>
-      <p>
-        The <strong>Trio</strong> DIY automated insulin delivery app utilizes GitHub Actions to compile native iOS binaries on cloud-hosted macOS virtual machines (such as <code>macos-14</code>, <code>macos-15</code>, and <code>macos-26</code>). Because thousands of users fork the upstream repository to build and sign personalized TestFlight installations, this ecosystem serves as a large-scale natural experiment on the availability, queue contention, and diurnal failure patterns of GitHub's macOS hosted runner fleet.
-      </p>
-      <p>
-        This investigation performed an <strong>exhaustive 100% census</strong> of all 2,437 public forks of <code>nightscout/Trio</code>, analyzing 41,410 individual executions. All 14,269 non-successful runs were inspected at the individual job, step, runner ID, and check-run annotation level to distinguish between normal Fastlane/signing failures and true macOS runner capacity exhaustion.
-      </p>
-    </section>
+    <main>
+      <!-- =====================================================================
+           TAB 1: FOR TRIO BUILDERS & USERS (NON-CODERS + DEV ZIPPIES)
+           ===================================================================== -->
+      <div id="panel-users" class="tab-panel" role="tabpanel" aria-labelledby="tab-users">
 
-    <!-- Section 2: Diurnal Time-of-Day Pattern -->
-    <section>
-      <h2>Diurnal Time-of-Day Analysis (24-Hour UTC Curve)</h2>
-      <p>
-        A rigorous breakdown of manual build dispatches (<code>workflow_dispatch</code>) demonstrates a pronounced diurnal congestion curve driven by global developer working hours:
-      </p>
+        <!-- Interactive Local Timezone Schedule Widget -->
+        <div class="advisor-panel" aria-label="Interactive Build Time Advisor">
+          <div class="advisor-header">
+            <div>
+              <h2 style="margin-bottom: 0.2rem; font-size: 1.3rem;">🕒 Best Time of Day to Click “Run workflow”</h2>
+              <p style="margin-bottom: 0; font-size: 0.9rem; color: var(--text-muted);">
+                Because GitHub shares a limited pool of cloud Mac computers across all users worldwide, <strong>when</strong> you start a manual build strongly affects whether a Mac is available.
+              </p>
+            </div>
+            <div class="advisor-controls">
+              <label for="tz-select" style="font-size: 0.82rem; color: var(--text-muted); font-weight: 600;">Your Timezone:</label>
+              <select id="tz-select" class="advisor-select">
+                <option value="local">Auto-Detect Browser Timezone</option>
+                <option value="America/New_York">US Eastern (EDT / EST)</option>
+                <option value="America/Chicago">US Central (CDT / CST)</option>
+                <option value="America/Denver">US Mountain (MDT / MST)</option>
+                <option value="America/Los_Angeles">US Pacific (PDT / PST)</option>
+                <option value="Europe/London">UK / Ireland (BST / GMT)</option>
+                <option value="Europe/Berlin">Central Europe (CEST / CET)</option>
+                <option value="Australia/Sydney">Australia Eastern (AEDT / AEST)</option>
+                <option value="UTC">UTC (Coordinated Universal Time)</option>
+              </select>
+            </div>
+          </div>
 
-      <div class="chart-container">
-        <img src="./assets/diurnal_curve.svg" alt="Figure 1: Diurnal Activity & macOS Runner Starvation Rate (24h UTC Profile)">
-      </div>
+          <div class="advisor-grid">
+            <div class="window-box window-safe">
+              <div class="window-label" style="color: var(--success);">✅ Recommended Safe Window</div>
+              <div class="window-time" id="tz-safe-window">6:00 PM – 7:00 AM EDT</div>
+              <div class="window-note">
+                <strong>22:00 – 11:00 UTC.</strong> Over <strong>99%</strong> historical Mac availability (&gt;97.5% even during October 2026 congestion).
+              </div>
+            </div>
 
-      <div class="callout callout-danger">
-        <div class="callout-title">Acute Peak Window: 14:00 – 17:00 UTC (10:00 AM – 1:00 PM US Eastern)</div>
-        During this 3-hour window, the manual build failure rate due to macOS runner starvation peaks at <strong>5.2% – 6.2%</strong>. This represents the global overlap between North American morning working hours and European afternoon working hours, when corporate and open-source CI pipelines saturate GitHub's shared macOS pools.
-      </div>
+            <div class="window-box window-avoid">
+              <div class="window-label" style="color: var(--danger);">⚠️ Peak Congestion (Avoid Manual Builds)</div>
+              <div class="window-time" id="tz-avoid-window">10:00 AM – 1:00 PM EDT</div>
+              <div class="window-note">
+                <strong>14:00 – 17:00 UTC.</strong> US morning &amp; European afternoon overlap. In October 2026, <strong>1 in 5 manual builds (18%–22%)</strong> failed to get a Mac in this window.
+              </div>
+            </div>
 
-      <div class="callout callout-success">
-        <div class="callout-title">Optimal Safe Window: 22:00 – 11:00 UTC (Late US Evening / Morning Europe)</div>
-        During late North American evening through European morning hours, runner starvation drops to near zero (< 1%). At 03:00 and 23:00 UTC, the empirical starvation rate across thousands of runs is only <strong>0.3%</strong>.
-      </div>
-    </section>
-
-    <!-- Section 3: Longitudinal Timeline & Outages -->
-    <section>
-      <h2>Historical Timeline & Infrastructure Shifts (2024–2026)</h2>
-      <p>
-        Tracking runner starvations across the 2-year timeline reveals two major inflection points in GitHub Actions macOS infrastructure:
-      </p>
-
-      <div class="chart-container">
-        <img src="./assets/timeline.svg" alt="Figure 2: Historical Timeline of Build Executions vs. macOS Runner Starvations">
-      </div>
-
-      <div class="callout">
-        <div class="callout-title">Incident 1: October 1, 2025 Outage</div>
-        On Wednesday, October 1, 2025, a concentrated GitHub Actions infrastructure outage caused <strong>139 scheduled cron builds</strong> to simultaneously fail at 08:00 UTC with the annotation: <em>"The job was not acquired by Runner of type hosted even after multiple attempts"</em>.
-      </div>
-
-      <div class="callout callout-danger">
-        <div class="callout-title">Incident 2: October 2026 Migration to Apple Silicon (macos-26)</div>
-        In October 2026, Trio migrated its default runner from x86 to Apple Silicon <code>macos-26</code> (Xcode 26). The smaller M-series runner pool caused a sharp resurgence in queue timeouts, producing <strong>176 runner-lack failures</strong> (44.5% of all runner failures in project history) and frequent capacity warnings.
-      </div>
-    </section>
-
-    <!-- Section 4: Comparative Window Analysis (Recent 4 Weeks vs Prior 4 Weeks) -->
-    <section>
-      <h2>Comparative Window Analysis: Recent 4-Week Crisis vs. Prior 4-Week Baseline</h2>
-      <p>
-        To understand the recent operational breakdown, we isolated the temporal progression of failure rates over the last 8 weeks. Evaluating weekly intervals reveals a sharp, non-linear phase transition beginning in early October 2026:
-      </p>
-
-      <div class="callout">
-        <div class="callout-title">Why a 4-Week Window (28 Days) is the Optimal Statistical Boundary</div>
-        Analyzing 4, 5, and 6-week candidate windows demonstrates that a <strong>4-week window (October 1, 2026 to October 28, 2026)</strong> compared to the <strong>prior 4-week window (September 3, 2026 to September 30, 2026)</strong> provides the cleanest separation between baseline background noise and the acute capacity crisis. Throughout September (Weeks 8–5), runner failure rates remained flat at 0.5%–1.3% (averaging 0.92%). Starting October 1 (Week 4), failures escalated progressively, reaching critical surge thresholds of <strong>15.6% and 12.8% in Weeks 2 and 1</strong>. Stretching the window to 5 or 6 weeks incorporates quiescent September weeks into the recent period, diluting the structural change from +552% down to +394%.
-      </div>
-
-      <div class="chart-container">
-        <img src="./assets/weekly_progression_8w.svg" alt="Figure 5: 8-Week Progression of macOS Runner Starvation (Sep 3 – Oct 28, 2026)">
-      </div>
-
-      <!-- Weekly Progression Table -->
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Week</th>
-              <th>Date Range</th>
-              <th class="num">Total Runs</th>
-              <th class="num">Manual Dispatches</th>
-              <th class="num">Runner Starvations</th>
-              <th class="num">Manual Failure Rate</th>
-              <th>Operational Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>W-08</strong></td>
-              <td>2026-09-03 to 2026-09-09</td>
-              <td class="num">1,755</td>
-              <td class="num">361</td>
-              <td class="num">4</td>
-              <td class="num">1.11%</td>
-              <td><span class="badge badge-success">Baseline</span></td>
-            </tr>
-            <tr>
-              <td><strong>W-07</strong></td>
-              <td>2026-09-10 to 2026-09-16</td>
-              <td class="num">2,204</td>
-              <td class="num">1,188</td>
-              <td class="num">16</td>
-              <td class="num">1.35%</td>
-              <td><span class="badge badge-success">Baseline</span></td>
-            </tr>
-            <tr>
-              <td><strong>W-06</strong></td>
-              <td>2026-09-17 to 2026-09-23</td>
-              <td class="num">2,262</td>
-              <td class="num">1,014</td>
-              <td class="num">5</td>
-              <td class="num">0.49%</td>
-              <td><span class="badge badge-success">Baseline</span></td>
-            </tr>
-            <tr>
-              <td><strong>W-05</strong></td>
-              <td>2026-09-24 to 2026-09-30</td>
-              <td class="num">1,736</td>
-              <td class="num">384</td>
-              <td class="num">2</td>
-              <td class="num">0.52%</td>
-              <td><span class="badge badge-success">Baseline</span></td>
-            </tr>
-            <tr style="border-top: 2px solid var(--primary);">
-              <td><strong>W-04</strong></td>
-              <td>2026-10-01 to 2026-10-07</td>
-              <td class="num">1,960</td>
-              <td class="num">545</td>
-              <td class="num">7</td>
-              <td class="num">1.28%</td>
-              <td><span class="badge badge-primary">Trio v1.0.2 Release</span></td>
-            </tr>
-            <tr>
-              <td><strong>W-03</strong></td>
-              <td>2026-10-08 to 2026-10-14</td>
-              <td class="num">1,836</td>
-              <td class="num">753</td>
-              <td class="num">17</td>
-              <td class="num">2.26%</td>
-              <td><span class="badge" style="background: rgba(251, 191, 36, 0.2); color: var(--warning);">Elevated</span></td>
-            </tr>
-            <tr style="background: rgba(248, 113, 113, 0.08);">
-              <td><strong>W-02</strong></td>
-              <td>2026-10-15 to 2026-10-21</td>
-              <td class="num">662</td>
-              <td class="num">499</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">78</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">15.63%</td>
-              <td><span class="badge badge-danger">Critical Surge (PR #1639)</span></td>
-            </tr>
-            <tr style="background: rgba(248, 113, 113, 0.08);">
-              <td><strong>W-01</strong></td>
-              <td>2026-10-22 to 2026-10-28</td>
-              <td class="num">865</td>
-              <td class="num">571</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">74</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">12.78%</td>
-              <td><span class="badge badge-danger">Critical Surge Sustained</span></td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Comparison Metrics Cards -->
-      <div class="metrics-grid" style="margin: 2rem 0 1.5rem 0;">
-        <div class="card">
-          <div class="card-title">Runner Starvations</div>
-          <div class="card-value" style="color: var(--danger);">176 <span style="font-size: 1rem; color: var(--text-muted);">vs 27</span></div>
-          <div class="card-sub" style="color: var(--danger); font-weight: bold;">+551.9% surge (6.5x increase)</div>
+            <div class="window-box window-now" id="tz-now-box">
+              <div class="window-label" id="tz-now-label" style="color: var(--primary);">📍 Current Queue Outlook</div>
+              <div class="window-time" id="tz-now-time">--:--</div>
+              <div class="window-note" id="tz-now-status">Checking current UTC hour against empirical failure rates...</div>
+            </div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-title">Manual Failure Rate</div>
-          <div class="card-value" style="color: var(--danger);">7.39% <span style="font-size: 1rem; color: var(--text-muted);">vs 0.92%</span></div>
-          <div class="card-sub" style="color: var(--danger); font-weight: bold;">8.0x failure rate multiplier</div>
+
+        <!-- Section U1: Plain-English Summary -->
+        <section>
+          <div class="section-header">
+            <h2>1. Why Do Manual Builds Sometimes Fail to Start?</h2>
+          </div>
+          <p>
+            When you build Trio on GitHub using your browser (<strong>Actions → Build Trio → Run workflow</strong>), GitHub has to assign your job to an Apple Mac virtual machine (<code>macos-26</code>) because Apple only allows iOS apps to be compiled using Xcode on macOS.
+          </p>
+          <p>
+            <strong>When a build fails before compiling due to a missing runner, nothing is wrong with Trio or your fork’s settings.</strong> Instead, your build is waiting in line for GitHub’s shared global fleet of Apple Silicon Macs. During global business hours—especially between <strong>14:00 and 17:00 UTC (10:00 AM – 1:00 PM US Eastern)</strong>—thousands of companies and software projects request macOS computers at the same time. If no Mac frees up before GitHub’s queue timeout expires, GitHub cancels the build.
+          </p>
+
+          <div class="steps-grid">
+            <div class="step-card">
+              <div class="step-num">1</div>
+              <h4>Wait for the Safe Window</h4>
+              <p>If your manual build fails because a macOS runner was never assigned, simply wait and click <strong>Run workflow</strong> again during the evening in North America or morning in Europe (<strong>22:00 – 11:00 UTC</strong>).</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">2</div>
+              <h4>Don’t Spam Retries at Peak Hours</h4>
+              <p>Re-clicking “Run workflow” five times in a row at 11:00 AM Eastern puts you right back in the same global traffic jam. Waiting a few hours increases your odds of success from ~78% to ~99%.</p>
+            </div>
+            <div class="step-card">
+              <div class="step-num">3</div>
+              <h4>Let Automatic Sunday Builds Work</h4>
+              <p>Trio’s automatic weekly Sunday check is smart: it checks for updates on a fast Linux server first and only requests a scarce Mac when a new build is actually needed.</p>
+            </div>
+          </div>
+
+          <details class="dev-zippy">
+            <summary>
+              <span class="zippy-summary-left">
+                <span class="badge badge-accent">Developer Deep Dive</span>
+                <span>How to verify if a failed run was caused by GitHub macOS runner starvation</span>
+              </span>
+              <span class="zippy-chevron">▼</span>
+            </summary>
+            <div class="zippy-body">
+              <p>
+                In GitHub Actions, you can distinguish an infrastructure queue drop from a code/signing error by inspecting the workflow run summary and the <code>Build</code> job metadata:
+              </p>
+              <ul>
+                <li><strong>Annotations on the Run Summary page:</strong> Look for GitHub’s system annotations:
+                  <br><code>"Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."</code>
+                  <br><code>"The job was not acquired by Runner of type hosted even after multiple attempts"</code>
+                </li>
+                <li><strong>Zero Step Execution (<code>runner_id: 0</code>):</strong> When you click into the failed <code>Build</code> (or <code>Validate Fastlane Secrets</code> / <code>Check certificates</code>) job, no build steps were executed (<code>steps: []</code>) and the job duration shows <code>0s</code> after sitting in <code>Queued</code> status.</li>
+                <li><strong>Independent Fork Quotas:</strong> Because each user builds inside their own personal GitHub account fork, forks do not share an organizational concurrency limit. Starvation occurs strictly at GitHub’s global hosted <code>macos-26</code> (arm64) hypervisor pool level.</li>
+              </ul>
+            </div>
+          </details>
+        </section>
+
+        <!-- Section U2: Timezone Reference Table & Diurnal Chart -->
+        <section>
+          <div class="section-header">
+            <h2>2. Time-of-Day Build Risk by Timezone</h2>
+          </div>
+          <p>
+            Across all 41,410 historical workflow runs (and especially during the October 2026 capacity crunch), manual build failures follow a predictable daily wave:
+          </p>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Time Window (UTC)</th>
+                  <th>US Eastern (EDT)</th>
+                  <th>US Pacific (PDT)</th>
+                  <th>Central Europe (CEST)</th>
+                  <th class="num">2-Year Avg Failure Rate</th>
+                  <th class="num">Oct 2026 Failure Rate</th>
+                  <th>Recommendation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: rgba(52, 211, 153, 0.07);">
+                  <td><strong>22:00 – 05:59 UTC</strong></td>
+                  <td>6:00 PM – 1:59 AM</td>
+                  <td>3:00 PM – 10:59 PM</td>
+                  <td>12:00 AM – 7:59 AM</td>
+                  <td class="num" style="color: var(--success); font-weight: 700;">0.3% – 0.9%</td>
+                  <td class="num" style="color: var(--success); font-weight: 700;">0.0% – 2.4%</td>
+                  <td><span class="badge badge-success">Best Time to Build</span></td>
+                </tr>
+                <tr style="background: rgba(52, 211, 153, 0.04);">
+                  <td><strong>06:00 – 11:59 UTC</strong></td>
+                  <td>2:00 AM – 7:59 AM</td>
+                  <td>11:00 PM – 4:59 AM</td>
+                  <td>8:00 AM – 1:59 PM</td>
+                  <td class="num" style="color: var(--success); font-weight: 700;">0.5% – 1.2%</td>
+                  <td class="num" style="color: var(--success); font-weight: 700;">0.0% – 3.5%</td>
+                  <td><span class="badge badge-success">Safe Window</span></td>
+                </tr>
+                <tr>
+                  <td><strong>12:00 – 13:59 UTC</strong></td>
+                  <td>8:00 AM – 9:59 AM</td>
+                  <td>5:00 AM – 6:59 AM</td>
+                  <td>2:00 PM – 3:59 PM</td>
+                  <td class="num">1.7% – 2.2%</td>
+                  <td class="num" style="color: var(--warning); font-weight: 700;">5.2% – 7.4%</td>
+                  <td><span class="badge badge-warning">Moderate Queue</span></td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.12);">
+                  <td><strong>14:00 – 16:59 UTC</strong></td>
+                  <td>10:00 AM – 12:59 PM</td>
+                  <td>7:00 AM – 9:59 AM</td>
+                  <td>4:00 PM – 6:59 PM</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">5.2% – 6.2%</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">18.4% – 21.9%</td>
+                  <td><span class="badge badge-danger">Avoid (Peak Congestion)</span></td>
+                </tr>
+                <tr>
+                  <td><strong>17:00 – 21:59 UTC</strong></td>
+                  <td>1:00 PM – 5:59 PM</td>
+                  <td>10:00 AM – 2:59 PM</td>
+                  <td>7:00 PM – 11:59 PM</td>
+                  <td class="num">1.7% – 3.9%</td>
+                  <td class="num" style="color: var(--warning); font-weight: 700;">4.3% – 12.3%</td>
+                  <td><span class="badge badge-warning">Tapering Congestion</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="chart-container">
+            <img src="./assets/recent_vs_prior_4w_hourly.svg" alt="Hourly Failure Rate Comparison — Recent 4 Weeks vs. Prior 4 Weeks Baseline">
+            <div class="chart-caption">
+              Comparison of manual build failure rates by hour of day (UTC) between September 2026 (gray baseline) and October 2026 (red capacity crunch).
+            </div>
+          </div>
+
+          <details class="dev-zippy">
+            <summary>
+              <span class="zippy-summary-left">
+                <span class="badge badge-accent">Developer Deep Dive</span>
+                <span>View full 2-year 24-hour diurnal curve and raw hourly failure rates</span>
+              </span>
+              <span class="zippy-chevron">▼</span>
+            </summary>
+            <div class="zippy-body">
+              <p>
+                Across the entire 2-year dataset (September 2024 – October 2026), <strong>63.4% of all manual macOS runner starvations</strong> occurred between 14:00 and 20:00 UTC. The chart below separates scheduled Sunday cron volume (light blue) from manual <code>workflow_dispatch</code> volume (dark blue) and plots the resulting macOS starvation percentage:
+              </p>
+              <div class="chart-container" style="margin: 1rem 0;">
+                <img src="./assets/diurnal_curve.svg" alt="Figure 1: Diurnal Activity & macOS Runner Starvation Rate (24h UTC Profile)">
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <!-- Section U3: What Happened in October 2026? -->
+        <section>
+          <div class="section-header">
+            <h2>3. Why Did Runner Timeouts Spike in October 2026?</h2>
+          </div>
+          <p>
+            If you noticed builds failing much more often in mid-to-late October 2026, the data confirms your experience:
+          </p>
+          <ul>
+            <li><strong>September 2026 Baseline:</strong> Across all Trio forks in September, only <strong>0.92%</strong> of manual builds (less than 1 in 100) failed due to macOS runner unavailability.</li>
+            <li><strong>October 2026 Surge:</strong> In October 2026, macOS runner starvations jumped <strong>6.5x</strong> (from 27 to 176 failures), pushing the overall manual failure rate to <strong>7.39%</strong>—and over <strong>15%</strong> during the week of October 15–21.</li>
+            <li><strong>Global Infrastructure Bottleneck:</strong> The spike began sharply on <strong>Monday, October 19, 2026</strong> (coinciding with GitHub’s scheduled October 19 runner image migration window), even though Trio community build volume was actually <em>lower</em> that week than in September. Nearly every failed build carried GitHub’s platform notice: <em>“Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times.”</em></li>
+          </ul>
+
+          <details class="dev-zippy">
+            <summary>
+              <span class="zippy-summary-left">
+                <span class="badge badge-accent">Developer Deep Dive</span>
+                <span>Daily telemetry around October 19, 2026 &amp; why Trio’s own traffic did not cause the spike</span>
+              </span>
+              <span class="zippy-chevron">▼</span>
+            </summary>
+            <div class="zippy-body">
+              <p>
+                Inspecting daily manual dispatches (<code>workflow_dispatch</code>) confirms that the surge was driven by supply-side capacity constraints on GitHub’s global <code>macos-26</code> (Apple Silicon arm64) fleet rather than a surge in Trio builds:
+              </p>
+              <ul>
+                <li>In September baseline weeks <code>W-07</code> (Sep 10–16) and <code>W-06</code> (Sep 17–23), Trio users triggered <strong>1,188</strong> and <strong>1,014</strong> manual builds with only <strong>1.35%</strong> and <strong>0.49%</strong> runner starvation rates.</li>
+                <li>In <code>W-02</code> (Oct 15–21), total manual builds were less than half of mid-September (<strong>499 manual builds</strong>), yet <strong>78 builds (15.63%)</strong> starved waiting for a <code>macos-26</code> VM.</li>
+                <li>On Saturday Oct 17 and Sunday Oct 18, <strong>154 manual builds</strong> ran with <strong>0 runner starvations (0.0%)</strong>. The starvation surge began abruptly on <strong>Monday, Oct 19</strong> (11/107 failed, 10.3%), peaking on <strong>Tuesday, Oct 20</strong> (42/97 failed, <strong>43.3%</strong>) and <strong>Wednesday, Oct 21</strong> (22/65 failed, <strong>33.8%</strong>).</li>
+              </ul>
+            </div>
+          </details>
+        </section>
+
+        <!-- Section U4: Why Sunday Automatic Builds Are Safe -->
+        <section>
+          <div class="section-header">
+            <h2>4. Why Automatic Sunday Builds Almost Never Fail</h2>
+          </div>
+          <p>
+            Almost three-quarters of all Trio workflow runs (<strong>30,448 out of 41,410 runs</strong>) happen on Sundays via Trio’s automatic weekly schedule. Yet Sunday has the <strong>lowest macOS failure rate of any day of the week (0.25%)</strong>, while Tuesday and Wednesday have the highest failure rates (<strong>3.5% – 3.7%</strong>).
+          </p>
+          <div class="callout callout-success">
+            <div class="callout-title">How Trio Protects Your Sunday Builds</div>
+            When the Sunday schedule triggers, Trio does <strong>not</strong> immediately ask GitHub for a Mac computer. Instead, it runs a quick pre-check on an abundant Linux server to see if there are new Trio updates or if your monthly TestFlight refresh is due. If no build is needed, it stops cleanly in seconds without ever waiting in the Mac queue.
+          </div>
+
+          <details class="dev-zippy">
+            <summary>
+              <span class="zippy-summary-left">
+                <span class="badge badge-accent">Developer Deep Dive</span>
+                <span>Workflow architecture: Linux pre-flight gating in <code>.github/workflows/build_trio.yml</code></span>
+              </span>
+              <span class="zippy-chevron">▼</span>
+            </summary>
+            <div class="zippy-body">
+              <p>
+                In <code>.github/workflows/build_trio.yml</code>, the workflow graph is structured so that expensive macOS jobs are downstream of lightweight Linux checks:
+              </p>
+              <ol>
+                <li><code>check_status</code> executes on <code>ubuntu-26.04</code> / <code>ubuntu-latest</code>, checking upstream branch SHAs and evaluating whether the current date matches the scheduled monthly rebuild window.</li>
+                <li>If <code>should_build != 'true'</code>, the dependent <code>cancel_when_no_build</code> job runs on Ubuntu and cancels the workflow run via the GitHub REST API, leaving the downstream <code>build</code> job (which targets <code>macos-26</code>) in <code>skipped</code> status.</li>
+                <li>Any custom fork modifications should preserve this two-stage Ubuntu pre-flight gate so scheduled checks never contend for <code>macos-26</code> capacity unnecessarily.</li>
+              </ol>
+            </div>
+          </details>
+        </section>
+
+        <!-- Section U5: Other Failure Causes -->
+        <section>
+          <div class="section-header">
+            <h2>5. When It’s Not GitHub’s Queue: Other Common Build Failures</h2>
+          </div>
+          <p>
+            Across all 41,410 workflow runs, <strong>65.5% (27,117 runs) succeeded</strong> and another <strong>6.8% (2,817 runs)</strong> were normal Sunday checks where no new build was needed. Of the remaining runs that actually failed, macOS runner starvation accounted for <strong>395 failures</strong>. If your build got a Mac computer and still failed after running for several minutes, check these common causes:
+          </p>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>What Failed</th>
+                  <th class="num">Historical Runs</th>
+                  <th>What It Means in Plain English</th>
+                  <th>How to Fix It</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Xcode / Fastlane Compilation</strong></td>
+                  <td class="num">4,154</td>
+                  <td>The Mac started building Trio, but code compilation or archiving failed.</td>
+                  <td>Sync your fork with upstream <code>nightscout/Trio</code> and make sure submodules are updated cleanly.</td>
+                </tr>
+                <tr>
+                  <td><strong>Secrets / API Key Validation</strong></td>
+                  <td class="num">1,987</td>
+                  <td>One of your GitHub Actions secrets (such as App Store Connect key or Match passphrase) is missing or has a typo.</td>
+                  <td>Run the <strong>Validate Secrets</strong> workflow or double-check your 6 required secrets in your repo’s Settings.</td>
+                </tr>
+                <tr>
+                  <td><strong>TestFlight Upload</strong></td>
+                  <td class="num">914</td>
+                  <td>The app built fine, but uploading to Apple’s TestFlight servers failed or timed out.</td>
+                  <td>Check if you need to accept a new Apple Developer Agreement in App Store Connect, or re-run later.</td>
+                </tr>
+                <tr>
+                  <td><strong>GitHub Token (<code>GH_PAT</code>) Access</strong></td>
+                  <td class="num">653</td>
+                  <td>Your Personal Access Token expired or lacks permission to read/write your Match certificates repo.</td>
+                  <td>Generate a new classic Personal Access Token with <code>repo</code> &amp; <code>workflow</code> scopes and update <code>GH_PAT</code>.</td>
+                </tr>
+                <tr>
+                  <td><strong>Distribution Certificate Expired</strong></td>
+                  <td class="num">458</td>
+                  <td>Your annual Apple iOS Distribution Certificate expired or was revoked.</td>
+                  <td>Follow the Trio documentation to run <strong>Nuke Certificates</strong> and generate a fresh certificate.</td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.1);">
+                  <td><strong style="color: var(--danger);">macOS Runner Starvation</strong></td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">395</td>
+                  <td>GitHub ran out of available cloud Mac computers before your build could start.</td>
+                  <td>Wait and trigger your manual build between <strong>22:00 and 11:00 UTC</strong> (evening US / morning EU).</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <!-- =====================================================================
+           TAB 2: FOR DEVELOPERS & MAINTAINERS (FULL EMPIRICAL CENSUS)
+           ===================================================================== -->
+      <div id="panel-devs" class="tab-panel" role="tabpanel" aria-labelledby="tab-devs" hidden="until-found">
+
+        <!-- Key Population KPIs -->
+        <div class="metrics-grid">
+          <div class="card">
+            <div class="card-title">Total Fork Population</div>
+            <div class="card-value">2,437</div>
+            <div class="card-sub">100% of public forks indexed</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Workflow Executions</div>
+            <div class="card-value">41,410</div>
+            <div class="card-sub">14,269 non-successful deep-inspected</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Overall Build Success</div>
+            <div class="card-value" style="color: var(--success);">65.5%</div>
+            <div class="card-sub">27,117 successful TestFlight builds</div>
+          </div>
+          <div class="card">
+            <div class="card-title">Confirmed Starvations</div>
+            <div class="card-value" style="color: var(--danger);">395</div>
+            <div class="card-sub">176 (44.5%) occurred in Oct 2026</div>
+          </div>
         </div>
-        <div class="card">
-          <div class="card-title">Peak Hour Risk (15:00 UTC)</div>
-          <div class="card-value" style="color: var(--danger);">21.9% <span style="font-size: 1rem; color: var(--text-muted);">vs 1.3%</span></div>
-          <div class="card-sub" style="color: var(--danger); font-weight: bold;">16.8x peak congestion spike</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Safe Window Retained</div>
-          <div class="card-value" style="color: var(--success);">< 2.5%</div>
-          <div class="card-sub">22:00 – 11:00 UTC remains quiet</div>
-        </div>
+
+        <!-- Section D1: Comparative Window Analysis -->
+        <section>
+          <div class="section-header">
+            <h2>1. Comparative Window Analysis: Recent 4 Weeks vs. Prior 4 Weeks</h2>
+          </div>
+          <p>
+            To quantify the October 2026 degradation in GitHub’s hosted <code>macos-26</code> (arm64) runner availability, we evaluated candidate comparison windows of 4, 5, and 6 weeks across the last 8 weeks of telemetry (September 3 – October 28, 2026).
+          </p>
+
+          <div class="callout">
+            <div class="callout-title">Statistical Justification for the 4-Week (28-Day) Boundary</div>
+            Throughout September 2026 (<code>W-08</code> through <code>W-05</code>), manual build runner starvation remained stationary at a low baseline of <strong>0.49% – 1.35%</strong> (averaging <strong>0.92%</strong> across 2,947 manual dispatches). Beginning October 1 (<code>W-04</code>), starvation rates climbed progressively and underwent a phase transition in <code>W-02</code> (<strong>15.63%</strong>) and <code>W-01</code> (<strong>12.78%</strong>). Comparing <strong>October 1–28 (Recent 4 Weeks)</strong> against <strong>September 3–30 (Prior 4 Weeks)</strong> isolates the exact inflection boundary without blending September baseline weeks into the crisis window.
+          </div>
+
+          <!-- 4-Week Delta Cards -->
+          <div class="metrics-grid" style="margin: 1.75rem 0;">
+            <div class="card">
+              <div class="card-title">Starvation Count (4W)</div>
+              <div class="card-value" style="color: var(--danger);">176 <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">vs 27</span></div>
+              <div class="card-sub" style="color: var(--danger); font-weight: 600;">+551.9% surge (6.5x increase)</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Manual Starvation Rate</div>
+              <div class="card-value" style="color: var(--danger);">7.39% <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">vs 0.92%</span></div>
+              <div class="card-sub" style="color: var(--danger); font-weight: 600;">8.0x failure rate multiplier</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Peak Hour Failure (15:00 UTC)</div>
+              <div class="card-value" style="color: var(--danger);">21.9% <span style="font-size: 1rem; color: var(--text-muted); font-weight: 500;">vs 1.3%</span></div>
+              <div class="card-sub" style="color: var(--danger); font-weight: 600;">16.8x peak congestion spike</div>
+            </div>
+            <div class="card">
+              <div class="card-title">Off-Peak Resilience</div>
+              <div class="card-value" style="color: var(--success);">&lt; 2.5%</div>
+              <div class="card-sub">22:00 – 11:00 UTC remains stable</div>
+            </div>
+          </div>
+
+          <div class="chart-container">
+            <img src="./assets/weekly_progression_8w.svg" alt="Figure: 8-Week Progression of macOS Runner Starvation (Sep 3 – Oct 28, 2026)">
+            <div class="chart-caption">
+              Weekly progression of manual build runner starvations (count and percentage of <code>workflow_dispatch</code> runs) from September 3 to October 28, 2026.
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Week</th>
+                  <th>Date Range</th>
+                  <th class="num">Total Runs</th>
+                  <th class="num">Manual Dispatches</th>
+                  <th class="num">Runner Starvations</th>
+                  <th class="num">Manual Failure Rate</th>
+                  <th>Operational Regime</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>W-08</strong></td>
+                  <td>2026-09-03 to 2026-09-09</td>
+                  <td class="num">1,755</td>
+                  <td class="num">361</td>
+                  <td class="num">4</td>
+                  <td class="num">1.11%</td>
+                  <td><span class="badge badge-success">Baseline</span></td>
+                </tr>
+                <tr>
+                  <td><strong>W-07</strong></td>
+                  <td>2026-09-10 to 2026-09-16</td>
+                  <td class="num">2,204</td>
+                  <td class="num">1,188</td>
+                  <td class="num">16</td>
+                  <td class="num">1.35%</td>
+                  <td><span class="badge badge-success">Baseline</span></td>
+                </tr>
+                <tr>
+                  <td><strong>W-06</strong></td>
+                  <td>2026-09-17 to 2026-09-23</td>
+                  <td class="num">2,262</td>
+                  <td class="num">1,014</td>
+                  <td class="num">5</td>
+                  <td class="num">0.49%</td>
+                  <td><span class="badge badge-success">Baseline</span></td>
+                </tr>
+                <tr>
+                  <td><strong>W-05</strong></td>
+                  <td>2026-09-24 to 2026-09-30</td>
+                  <td class="num">1,736</td>
+                  <td class="num">384</td>
+                  <td class="num">2</td>
+                  <td class="num">0.52%</td>
+                  <td><span class="badge badge-success">Baseline</span></td>
+                </tr>
+                <tr style="border-top: 2px solid var(--primary);">
+                  <td><strong>W-04</strong></td>
+                  <td>2026-10-01 to 2026-10-07</td>
+                  <td class="num">1,960</td>
+                  <td class="num">545</td>
+                  <td class="num">7</td>
+                  <td class="num">1.28%</td>
+                  <td><span class="badge badge-success">Baseline</span></td>
+                </tr>
+                <tr>
+                  <td><strong>W-03</strong></td>
+                  <td>2026-10-08 to 2026-10-14</td>
+                  <td class="num">1,836</td>
+                  <td class="num">753</td>
+                  <td class="num">17</td>
+                  <td class="num">2.26%</td>
+                  <td><span class="badge badge-warning">Elevated</span></td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.08);">
+                  <td><strong>W-02</strong></td>
+                  <td>2026-10-15 to 2026-10-21</td>
+                  <td class="num">662</td>
+                  <td class="num">499</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">78</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">15.63%</td>
+                  <td><span class="badge badge-danger">Critical Surge</span></td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.08);">
+                  <td><strong>W-01</strong></td>
+                  <td>2026-10-22 to 2026-10-28</td>
+                  <td class="num">865</td>
+                  <td class="num">571</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">74</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">12.78%</td>
+                  <td><span class="badge badge-danger">Critical Surge</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout callout-danger">
+            <div class="callout-title">Empirical Observation: Supply-Side Exhaustion on GitHub’s Hosted <code>macos-26</code> Pool</div>
+            Notice that manual build demand across Trio forks during <code>W-02</code> (499 dispatches) and <code>W-01</code> (571 dispatches) was roughly half of mid-September baseline demand (<code>W-07</code>: 1,188 dispatches; <code>W-06</code>: 1,014 dispatches). Daily telemetry shows 0 starvations on Oct 17–18 (154 manual runs), followed by an abrupt jump starting <strong>Monday, October 19, 2026</strong> (10.3% failure rate on Oct 19, 43.3% on Oct 20, and 33.8% on Oct 21), accompanied by GitHub’s platform annotation: <code>"Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."</code>
+          </div>
+        </section>
+
+        <!-- Section D2: Diurnal & Peak Hour Escalation -->
+        <section>
+          <div class="section-header">
+            <h2>2. Diurnal Congestion Profile &amp; Peak Hour Escalation (14:00 – 17:00 UTC)</h2>
+          </div>
+          <p>
+            Comparing hourly failure rates between the Prior 4-Week Baseline (Sep 3–30) and the Recent 4-Week Window (Oct 1–28) shows that runner starvation is heavily concentrated in the <strong>14:00 – 17:00 UTC</strong> window, when North American and European business hours overlap:
+          </p>
+
+          <div class="chart-container">
+            <img src="./assets/recent_vs_prior_4w_hourly.svg" alt="Figure: Hourly Failure Rate Comparison — Recent 4 Weeks vs. Prior 4 Weeks Baseline">
+            <div class="chart-caption">
+              Hourly manual build starvation rate (%) comparing Prior 4 Weeks (Sep 3–30, 2026) vs. Recent 4 Weeks (Oct 1–28, 2026).
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Hour (UTC)</th>
+                  <th class="num">Prior 4W Dispatches</th>
+                  <th class="num">Prior Starvations</th>
+                  <th class="num">Prior Rate (%)</th>
+                  <th class="num">Recent 4W Dispatches</th>
+                  <th class="num">Recent Starvations</th>
+                  <th class="num">Recent Rate (%)</th>
+                  <th>Observed Shift</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: rgba(248, 113, 113, 0.1);">
+                  <td><strong>14:00 UTC</strong></td>
+                  <td class="num">130</td>
+                  <td class="num">0</td>
+                  <td class="num">0.00%</td>
+                  <td class="num">125</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">23</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">18.40%</td>
+                  <td>From 0 failures to 1 in 5.4 builds failing</td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.15);">
+                  <td><strong>15:00 UTC</strong></td>
+                  <td class="num">159</td>
+                  <td class="num">2</td>
+                  <td class="num">1.26%</td>
+                  <td class="num">146</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">32</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">21.92%</td>
+                  <td><strong>17.4x surge (1 in 4.5 builds failing)</strong></td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.1);">
+                  <td><strong>16:00 UTC</strong></td>
+                  <td class="num">142</td>
+                  <td class="num">0</td>
+                  <td class="num">0.00%</td>
+                  <td class="num">120</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">24</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">20.00%</td>
+                  <td>From 0 failures to 1 in 5.0 builds failing</td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.08);">
+                  <td><strong>17:00 UTC</strong></td>
+                  <td class="num">217</td>
+                  <td class="num">4</td>
+                  <td class="num">1.84%</td>
+                  <td class="num">138</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">17</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">12.32%</td>
+                  <td>6.7x surge</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="chart-container">
+            <img src="./assets/diurnal_curve.svg" alt="Figure: Diurnal Activity & macOS Runner Starvation Rate (24h UTC Profile)">
+            <div class="chart-caption">
+              Cumulative 24-hour UTC distribution across all 41,410 workflow runs (Sep 2024 – Oct 2026), contrasting scheduled Sunday crons against manual dispatches.
+            </div>
+          </div>
+        </section>
+
+        <!-- Section D3: Longitudinal & Day-of-Week Analysis -->
+        <section>
+          <div class="section-header">
+            <h2>3. Longitudinal History (2024–2026) &amp; Day-of-Week Dynamics</h2>
+          </div>
+          <p>
+            Evaluating monthly execution volume alongside runner starvation events highlights two distinct infrastructure regimes across the 26-month history of the repository:
+          </p>
+
+          <div class="chart-container">
+            <img src="./assets/timeline.svg" alt="Figure: Historical Timeline of Build Executions vs. macOS Runner Starvations">
+            <div class="chart-caption">
+              Monthly total workflow runs (top) vs. confirmed macOS runner starvations (bottom) from September 2024 through October 2026.
+            </div>
+          </div>
+
+          <ul>
+            <li><strong>October 1, 2025 Scheduled Cron Outage:</strong> On Wednesday, October 1, 2025 at 08:00 UTC, an acute GitHub Actions outage caused <strong>139 scheduled cron runs</strong> to fail simultaneously with <code>"The job was not acquired by Runner of type hosted even after multiple attempts"</code>. Shortly thereafter, Trio shifted its scheduled build cadence to Sundays and staggered start times away from <code>:00</code>.</li>
+            <li><strong>October 2026 <code>macos-26</code> Pool Strain:</strong> Whereas the October 2025 incident was a single-hour outage affecting simultaneous cron jobs, the October 2026 event (176 starvations) affected manual <code>workflow_dispatch</code> runs repeatedly across weekday peak hours (`14:00–17:00 UTC`).</li>
+          </ul>
+
+          <div class="chart-container">
+            <img src="./assets/day_of_week.svg" alt="Figure: macOS Runner Starvation Rate by Day of Week">
+            <div class="chart-caption">
+              Manual build failure rate due to macOS runner starvation by day of the week (Monday through Sunday).
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Day of Week</th>
+                  <th class="num">Total Runs</th>
+                  <th class="num">Scheduled Runs</th>
+                  <th class="num">Manual Dispatches</th>
+                  <th class="num">Total Starvations</th>
+                  <th class="num">Manual Starvations</th>
+                  <th class="num">Manual Starvation Rate</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Monday</strong></td>
+                  <td class="num">2,018</td>
+                  <td class="num">650</td>
+                  <td class="num">1,247</td>
+                  <td class="num">29</td>
+                  <td class="num">29</td>
+                  <td class="num">2.33%</td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.08);">
+                  <td><strong>Tuesday</strong></td>
+                  <td class="num">1,603</td>
+                  <td class="num">147</td>
+                  <td class="num">1,316</td>
+                  <td class="num">49</td>
+                  <td class="num">49</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">3.72%</td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.08);">
+                  <td><strong>Wednesday</strong></td>
+                  <td class="num">2,018</td>
+                  <td class="num">491</td>
+                  <td class="num">1,414</td>
+                  <td class="num">189</td>
+                  <td class="num">49</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">3.47%</td>
+                </tr>
+                <tr>
+                  <td><strong>Thursday</strong></td>
+                  <td class="num">1,982</td>
+                  <td class="num">495</td>
+                  <td class="num">1,390</td>
+                  <td class="num">25</td>
+                  <td class="num">25</td>
+                  <td class="num">1.80%</td>
+                </tr>
+                <tr>
+                  <td><strong>Friday</strong></td>
+                  <td class="num">1,745</td>
+                  <td class="num">149</td>
+                  <td class="num">1,466</td>
+                  <td class="num">29</td>
+                  <td class="num">29</td>
+                  <td class="num">1.98%</td>
+                </tr>
+                <tr>
+                  <td><strong>Saturday</strong></td>
+                  <td class="num">1,596</td>
+                  <td class="num">268</td>
+                  <td class="num">1,264</td>
+                  <td class="num">18</td>
+                  <td class="num">18</td>
+                  <td class="num">1.42%</td>
+                </tr>
+                <tr style="background: rgba(52, 211, 153, 0.07);">
+                  <td><strong>Sunday</strong></td>
+                  <td class="num">30,448</td>
+                  <td class="num">28,608</td>
+                  <td class="num">1,794</td>
+                  <td class="num">56</td>
+                  <td class="num">15</td>
+                  <td class="num" style="color: var(--success); font-weight: 700;">0.84% (0.18% overall)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Section D4: Complete Failure Classification -->
+        <section>
+          <div class="section-header">
+            <h2>4. Complete Population Outcome &amp; Failure Taxonomy</h2>
+          </div>
+          <p>
+            Every non-successful execution (14,269 runs) across all 2,437 forks was inspected at the job, step, and check-run annotation level:
+          </p>
+
+          <div class="chart-container">
+            <img src="./assets/outcomes_donut.svg" alt="Figure: Population Outcome Distribution across All 2,437 Forks">
+            <div class="chart-caption">
+              Complete outcome classification across all 41,410 workflow runs in the <code>nightscout/Trio</code> fork population.
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Outcome / Failure Category</th>
+                  <th class="num">Run Count</th>
+                  <th class="num">% of Non-Success</th>
+                  <th class="num">% of All Runs</th>
+                  <th>Diagnostic Signature / Root Mechanism</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style="background: rgba(52, 211, 153, 0.06);">
+                  <td><strong>Successful Build</strong></td>
+                  <td class="num">27,117</td>
+                  <td class="num">—</td>
+                  <td class="num">65.48%</td>
+                  <td>Compilation, signing, archiving, and TestFlight upload completed (`conclusion: success`)</td>
+                </tr>
+                <tr>
+                  <td><strong>Fastlane Archive / Xcode Compilation</strong></td>
+                  <td class="num">4,154</td>
+                  <td class="num">29.11%</td>
+                  <td class="num">10.03%</td>
+                  <td>Step <code>Fastlane Build &amp; Archive</code> failed (exit code 65/70, Swift compiler or submodule mismatch)</td>
+                </tr>
+                <tr>
+                  <td><strong>Scheduled No-Op Skip</strong></td>
+                  <td class="num">2,817</td>
+                  <td class="num">19.74%</td>
+                  <td class="num">6.80%</td>
+                  <td>Normal Sunday skip via <code>cancel_when_no_build</code> on Ubuntu; macOS <code>Build</code> job skipped</td>
+                </tr>
+                <tr>
+                  <td><strong>Fastlane Secrets Validation</strong></td>
+                  <td class="num">1,987</td>
+                  <td class="num">13.93%</td>
+                  <td class="num">4.80%</td>
+                  <td>Step <code>Validate Fastlane Secrets</code> failed due to missing/malformed App Store Connect or Match secrets</td>
+                </tr>
+                <tr>
+                  <td><strong>Miscellaneous macOS Steps</strong></td>
+                  <td class="num">1,745</td>
+                  <td class="num">12.23%</td>
+                  <td class="num">4.21%</td>
+                  <td>Bundler gem installation, CocoaPods, patch application, or NTP time sync error</td>
+                </tr>
+                <tr>
+                  <td><strong>Other / Manual Cancel / Startup</strong></td>
+                  <td class="num">1,146</td>
+                  <td class="num">8.03%</td>
+                  <td class="num">2.77%</td>
+                  <td>User-initiated cancellation, merge conflict, or workflow file syntax failure</td>
+                </tr>
+                <tr>
+                  <td><strong>TestFlight Upload Failure</strong></td>
+                  <td class="num">914</td>
+                  <td class="num">6.41%</td>
+                  <td class="num">2.21%</td>
+                  <td>Step <code>Fastlane upload to TestFlight</code> failed during Apple Transporter delivery</td>
+                </tr>
+                <tr>
+                  <td><strong>Ubuntu Access / PAT Failure</strong></td>
+                  <td class="num">653</td>
+                  <td class="num">4.58%</td>
+                  <td class="num">1.58%</td>
+                  <td>Step <code>Validate Access Token</code> failed on Linux due to expired or under-scoped <code>GH_PAT</code></td>
+                </tr>
+                <tr>
+                  <td><strong>Distribution Certs / Nuke</strong></td>
+                  <td class="num">458</td>
+                  <td class="num">3.21%</td>
+                  <td class="num">1.11%</td>
+                  <td>Match distribution certificate expiration, revocation, or provisioning profile mismatch</td>
+                </tr>
+                <tr style="background: rgba(248, 113, 113, 0.1);">
+                  <td><strong style="color: var(--danger);">macOS Runner Starvation</strong></td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">395</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">2.77%</td>
+                  <td class="num" style="color: var(--danger); font-weight: 700;">0.95%</td>
+                  <td>Unassigned macOS VM (<code>runner_id: 0</code>, empty steps, or explicit capacity exhaustion annotation)</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Section D5: Methodology & Collection Architecture -->
+        <section>
+          <div class="section-header">
+            <h2>5. Research Methodology, Rate-Limit Engineering &amp; Privacy Protocol</h2>
+          </div>
+          <p>
+            Collecting job-level telemetry across 2,437 repositories and 41,410 workflow runs required a crash-resilient, rate-limit-aware pipeline using Python’s standard library and SQLite in Write-Ahead Logging (WAL) mode.
+          </p>
+
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>Collector Phase</th>
+                  <th>Concurrency</th>
+                  <th>Pacing / Limiter</th>
+                  <th>Sustained Rate</th>
+                  <th>% of 5,000/hr Quota</th>
+                  <th>Operational Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Phase 1: Smear Daemon</strong><br><code>census_collector.py</code></td>
+                  <td>1 Worker</td>
+                  <td>4.2s sleep ± 0.4s jitter</td>
+                  <td>~830 – 850 req/hr</td>
+                  <td>~16.8%</td>
+                  <td>Indexed all 2,437 forks, cataloged all 41,410 workflow runs, and deep-inspected initial 5,910 non-successful runs.</td>
+                </tr>
+                <tr>
+                  <td><strong>Phase 2: Token-Bucket Collector</strong><br><code>fast_census_collector.py</code></td>
+                  <td>8 Workers</td>
+                  <td>Token-bucket (0.95s aggregate min interval)</td>
+                  <td>~3,600 – 3,780 req/hr</td>
+                  <td>~75.0%</td>
+                  <td>Completed deep job/annotation inspection of remaining 8,358 non-successful runs with zero 403/429 rate-limit lockouts.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Deterministic Classification Criteria for Runner Starvation</h3>
+          <p>
+            A workflow run was classified as a <strong>macOS Runner Starvation</strong> if and only if:
+          </p>
+          <ol>
+            <li>A job targeted a macOS runner label (<code>macos-26</code>, <code>macos-15</code>, <code>macos-14</code>, or <code>xcode-27</code>) and terminated with conclusion <code>cancelled</code>, <code>failure</code>, or <code>timed_out</code>; <strong>AND</strong></li>
+            <li><code>runner_id == 0</code> or <code>runner_name == ""</code> with an empty executed step array (<code>steps: []</code>), proving no hosted VM was ever provisioned; <strong>OR</strong></li>
+            <li>Check-run annotations explicitly contained either:
+              <ul>
+                <li><code>"The job was not acquired by Runner of type hosted even after multiple attempts"</code></li>
+                <li><code>"Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."</code></li>
+              </ul>
+            </li>
+            <li>Or the job failed during <code>Set up job</code> due to host provisioning dropout before user steps began.</li>
+          </ol>
+
+          <div class="callout callout-success">
+            <div class="callout-title">Privacy &amp; PII Redaction</div>
+            All personal identifiers—including GitHub usernames, fork URLs, email addresses, and commit SHAs—have been completely stripped from the published CSV/JSON datasets in <code>data/</code>. Only aggregated temporal and classification counts are published.
+          </div>
+        </section>
       </div>
-
-      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">Escalation of Peak Congestion Hours (14:00 – 17:00 UTC)</h3>
-      <p>
-        Comparing hourly failure rates across the two 4-week periods reveals that the failure surge was not distributed evenly throughout the day. Instead, it concentrated overwhelmingly into the global enterprise CI overlap window:
-      </p>
-
-      <div class="chart-container">
-        <img src="./assets/recent_vs_prior_4w_hourly.svg" alt="Figure 6: Hourly Failure Rate Comparison — Recent 4 Weeks vs. Prior 4 Weeks Baseline">
-      </div>
-
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Hour (UTC)</th>
-              <th class="num">Prior 4W Dispatches</th>
-              <th class="num">Prior Failures</th>
-              <th class="num">Prior Rate (%)</th>
-              <th class="num">Recent 4W Dispatches</th>
-              <th class="num">Recent Failures</th>
-              <th class="num">Recent Rate (%)</th>
-              <th>Shift / Escalation Factor</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="background: rgba(248, 113, 113, 0.1);">
-              <td><strong>14:00</strong></td>
-              <td class="num">130</td>
-              <td class="num">0</td>
-              <td class="num">0.0%</td>
-              <td class="num">125</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">23</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">18.4%</td>
-              <td>From 0 failures to nearly 1 in 5 failing</td>
-            </tr>
-            <tr style="background: rgba(248, 113, 113, 0.15);">
-              <td><strong>15:00</strong></td>
-              <td class="num">159</td>
-              <td class="num">2</td>
-              <td class="num">1.3%</td>
-              <td class="num">146</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">32</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">21.9%</td>
-              <td><strong>16.8x surge (1 in 4.5 builds fail)</strong></td>
-            </tr>
-            <tr style="background: rgba(248, 113, 113, 0.1);">
-              <td><strong>16:00</strong></td>
-              <td class="num">142</td>
-              <td class="num">0</td>
-              <td class="num">0.0%</td>
-              <td class="num">120</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">24</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">20.0%</td>
-              <td>From 0 failures to 1 in 5 failing</td>
-            </tr>
-            <tr style="background: rgba(248, 113, 113, 0.08);">
-              <td><strong>17:00</strong></td>
-              <td class="num">217</td>
-              <td class="num">4</td>
-              <td class="num">1.8%</td>
-              <td class="num">138</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">17</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">12.3%</td>
-              <td>6.8x surge</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="callout callout-danger">
-        <div class="callout-title">Root Cause Correlation: Upstream PR #1639 & GitHub Runner Migration</div>
-        On October 16, 2026, PR #1639 landed on <code>nightscout/Trio</code>, updating submodule dependencies, bumping Fastlane, and pinning explicit runner versions in anticipation of GitHub's scheduled October 19 migration. When combined with community rebuilding activity for v1.0.2, fork builds simultaneously competed for GitHub’s Apple Silicon <code>macos-26</code> hosted VMs during global enterprise peak hours, triggering acute queue starvation and allocation timeouts.
-      </div>
-    </section>
-
-    <!-- Section 5: Breakdown of All Outcomes -->
-    <section>
-      <h2>Comprehensive Failure & Outcome Classification</h2>
-      <p>
-        The 14,269 non-successful runs fall into distinct operational categories. While runner starvation is a significant infrastructure bottleneck, Fastlane signing, compilation, and secrets misconfiguration remain the leading causes of overall build failure:
-      </p>
-
-      <div class="chart-container">
-        <img src="./assets/outcomes_donut.svg" alt="Figure 3: Population Outcome Distribution across All 2,437 Forks">
-      </div>
-
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Classification</th>
-              <th class="num">Runs</th>
-              <th class="num">% of Failures</th>
-              <th class="num">% of All Runs</th>
-              <th>Root Cause / Mechanism</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Successful Build</strong></td>
-              <td class="num">27,117</td>
-              <td class="num">—</td>
-              <td class="num">65.48%</td>
-              <td>Compilation, archiving, and TestFlight release completed</td>
-            </tr>
-            <tr>
-              <td><strong>Fastlane Archive / Xcode Compilation</strong></td>
-              <td class="num">4,154</td>
-              <td class="num">29.11%</td>
-              <td class="num">10.03%</td>
-              <td>Compiler errors, Swift version divergence, missing submodules</td>
-            </tr>
-            <tr>
-              <td><strong>Scheduled No-Op Skip</strong></td>
-              <td class="num">2,817</td>
-              <td class="num">19.74%</td>
-              <td class="num">6.80%</td>
-              <td>Normal Sunday skip via <code>cancel_when_no_build</code> on Linux</td>
-            </tr>
-            <tr>
-              <td><strong>Fastlane Secrets Validation</strong></td>
-              <td class="num">1,987</td>
-              <td class="num">13.93%</td>
-              <td class="num">4.80%</td>
-              <td>Missing or invalid App Store Connect API keys / PATs</td>
-            </tr>
-            <tr>
-              <td><strong>Miscellaneous macOS Steps</strong></td>
-              <td class="num">1,745</td>
-              <td class="num">12.23%</td>
-              <td class="num">4.21%</td>
-              <td>Bundler gems, CocoaPods, patch application, or time sync</td>
-            </tr>
-            <tr>
-              <td><strong>TestFlight Upload Failure</strong></td>
-              <td class="num">914</td>
-              <td class="num">6.41%</td>
-              <td class="num">2.21%</td>
-              <td>Transporter timeouts, 2FA prompt, App Store downtime</td>
-            </tr>
-            <tr>
-              <td><strong>Ubuntu Access / PAT Failure</strong></td>
-              <td class="num">653</td>
-              <td class="num">4.58%</td>
-              <td class="num">1.58%</td>
-              <td>Fork lacks valid token to sync upstream repository</td>
-            </tr>
-            <tr>
-              <td><strong>Distribution Certs / Nuke</strong></td>
-              <td class="num">458</td>
-              <td class="num">3.21%</td>
-              <td class="num">1.11%</td>
-              <td>Match certificate revocation or provisioning profile renewal</td>
-            </tr>
-            <tr style="background: rgba(248, 113, 113, 0.1);">
-              <td><strong style="color: var(--danger);">macOS Runner Starvation</strong></td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">395</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">2.77%</td>
-              <td class="num" style="color: var(--danger); font-weight: bold;">0.95%</td>
-              <td>Capacity exhaustion (runner_id: 0, unacquired hosted runner)</td>
-            </tr>
-            <tr>
-              <td><strong>Other / Manual Cancel / Startup</strong></td>
-              <td class="num">1,146</td>
-              <td class="num">8.03%</td>
-              <td class="num">2.77%</td>
-              <td>Manual abortion, branch conflict, or GitHub Actions startup drop</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- Section 5: Day of Week Dynamics -->
-    <section>
-      <h2>Day-of-Week Dynamics: The Sunday Inoculation</h2>
-      <div class="chart-container">
-        <img src="./assets/day_of_week.svg" alt="Figure 4: macOS Runner Starvation Rate by Day of Week">
-      </div>
-      <p>
-        Despite Sunday representing <strong>73.5% of all project runs (30,448 executions)</strong>, it exhibits the lowest failure rate across the entire week (<strong>0.25% overall, 0.84% manual</strong>).
-      </p>
-      <div class="callout callout-success">
-        <div class="callout-title">Architectural Insight: Upstream Linux Gating</div>
-        Trio’s build action runs preliminary update checks (<code>check_status</code>) on <code>ubuntu-latest</code>. If there are no new commits upstream and it is not the designated monthly build day, the job cleanly terminates itself via <code>cancel_when_no_build</code> on Linux. Consequently, thousands of Sunday runs never enter the expensive macOS runner queue, insulating users from runner pool depletion.
-      </div>
-    </section>
-
-    <!-- Section 6: Comprehensive Methodology & Collection Infrastructure -->
-    <section>
-      <h2>Comprehensive Methodology & Collection Infrastructure</h2>
-      <p>
-        Conducting an exhaustive census across thousands of independent repositories requires balancing data depth, transactional integrity, and strict adherence to GitHub API rate limits and abuse prevention policies. Below is the detailed architecture and execution methodology used in this study.
-      </p>
-
-      <div class="metrics-grid" style="margin-bottom: 1.5rem;">
-        <div class="card">
-          <div class="card-title">Collection Tooling</div>
-          <div class="card-value" style="font-size: 1.3rem;">Python 3 + SQLite WAL</div>
-          <div class="card-sub">Standard library, zero cloud dependencies</div>
-        </div>
-        <div class="card">
-          <div class="card-title">API Authentication</div>
-          <div class="card-value" style="font-size: 1.3rem;">GitHub CLI Token</div>
-          <div class="card-sub">GitHub REST API v3 (repo scope)</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Hourly Quota Ceiling</div>
-          <div class="card-value" style="font-size: 1.3rem;">5,000 req / hr</div>
-          <div class="card-sub">Dynamically tracked per response header</div>
-        </div>
-        <div class="card">
-          <div class="card-title">Total Inspected Calls</div>
-          <div class="card-value" style="font-size: 1.3rem;">16,706 calls</div>
-          <div class="card-sub">Zero rate limit bans or 403 lockouts</div>
-        </div>
-      </div>
-
-      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">1. Two-Stage Research Pipeline</h3>
-      <p>
-        The study was conducted in two coordinated phases:
-      </p>
-      <ul style="margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1;">
-        <li><strong>Pilot Sampling (Validation Phase):</strong> An initial sample of 400 forks (2,740 workflow runs) was collected to validate the hypothesis, verify endpoint structures, and identify the exact diagnostic signatures that GitHub Actions emits when macOS runners are starved (e.g. check-run annotations and unassigned <code>runner_id: 0</code> metadata).</li>
-        <li><strong>Exhaustive Population Census (Scaling Phase):</strong> The pipeline was expanded to 100% of the population, paginating through all 25 pages of forks on <code>nightscout/Trio</code> (2,437 unique repositories) and extracting all 41,410 historical <code>Build Trio</code> workflow runs.</li>
-      </ul>
-
-      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">2. Throttling, Pacing & Rate Limit Management</h3>
-      <p>
-        GitHub enforces a strict primary quota of <strong>5,000 authenticated requests per rolling hour</strong>, alongside automated anti-abuse / secondary rate limit detection (which penalizes rapid bursts or excessive concurrent TCP connections). To ensure continuous, non-disruptive execution without triggering secondary 403 or 429 lockouts, we used a two-tier throttling architecture:
-      </p>
-
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Collector Stage</th>
-              <th>Concurrency</th>
-              <th>Pacing / Inter-Request Delay</th>
-              <th>Throughput</th>
-              <th>% of Quota</th>
-              <th>Purpose & Operations</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Phase 1: 12-Hour Smear Daemon</strong><br><code>census_collector.py</code></td>
-              <td>1 Worker (Single-Threaded)</td>
-              <td>4.2s sleep ± 0.4s randomized jitter</td>
-              <td>~830 – 850 req / hr</td>
-              <td>~16.8%</td>
-              <td>Gentle overnight collection: indexed all 2,437 forks, captured all 41,410 runs, and inspected initial 5,910 failures. Jitter ensured human-like non-periodic traffic.</td>
-            </tr>
-            <tr>
-              <td><strong>Phase 2: Accelerated Collector</strong><br><code>fast_census_collector.py</code></td>
-              <td>8 Workers (Thread Pool)</td>
-              <td>Centralized Token-Bucket Limiter (0.95s min aggregate delay)</td>
-              <td>~3,600 – 3,780 req / hr</td>
-              <td>~75.0%</td>
-              <td>High-throughput accelerated inspection of remaining 8,358 failures across 2 rolling rate windows, staying well below the 5,000/hr cap.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="callout">
-        <div class="callout-title">The Dynamic Rate Guardian Mechanism</div>
-        On every HTTP response, the collector extracted <code>X-RateLimit-Remaining</code> and <code>X-RateLimit-Reset</code> from response headers. If the remaining quota dipped below 80 requests in any rolling hour, all worker threads were automatically placed into a synchronized sleep state until <code>X-RateLimit-Reset + 5.0s</code>, resuming automatically once GitHub restored the full 5,000 allowance. In addition, an exponential backoff handler intercepted any transient 403/429 responses.
-      </div>
-
-      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">3. Persistent Storage & Crash Resilience</h3>
-      <p>
-        To guarantee zero data loss over multi-hour runs, all state was stored in a local SQLite database (<code>census_trio.db</code>):
-      </p>
-      <ul style="margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1;">
-        <li><strong>Write-Ahead Logging (WAL Mode):</strong> Enabled via <code>PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;</code> to eliminate database locking issues between concurrent worker threads and allow seamless real-time querying while collecting.</li>
-        <li><strong>Transactional Checkpoints:</strong> Every inspected workflow run and its associated job steps were committed immediately, allowing the collector to be paused, resumed, or killed at any moment without re-querying already processed runs.</li>
-        <li><strong>Smart Priority Queue:</strong> Uninspected failures were prioritized using SQL ordering: manual user runs (<code>workflow_dispatch</code>) and runs with positive queuing delays (<code>queue_duration_mins > 0</code>) were processed first, ensuring capacity drops were surfaced rapidly before batch scheduled runs.</li>
-      </ul>
-
-      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">4. Diagnostic Criteria for Failure Classification</h3>
-      <p>
-        Every one of the 14,269 non-successful workflow runs was categorized using a deterministic step-by-step diagnostic tree:
-      </p>
-      <div class="table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th>Classification</th>
-              <th>Diagnostic Rule / Matching Logic</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr style="background: rgba(248, 113, 113, 0.1);">
-              <td><strong style="color: var(--danger);">Lack of macOS Runner</strong></td>
-              <td>
-                1. Job targeted a macOS runner label (<code>macos-26</code>, <code>macos-15</code>, <code>macos-14</code>, <code>xcode-27</code>) AND status was <code>cancelled</code>, <code>failure</code>, or <code>timed_out</code>;<br>
-                2. AND (<code>runner_id == 0</code> OR <code>runner_name == ""</code> with empty step list <code>steps: []</code>);<br>
-                3. OR Check-run annotations explicitly contained <em>"The job was not acquired by Runner of type hosted even after multiple attempts"</em> or <em>"Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."</em>;<br>
-                4. OR Job failed at step <code>Set up job</code> with host provisioning failure.
-              </td>
-            </tr>
-            <tr>
-              <td><strong>Scheduled No-Op Skip</strong></td>
-              <td>Job <code>Cancel run when there is nothing to build</code> has conclusion <code>cancelled</code> AND the subsequent <code>Build</code> job was <code>skipped</code>. (Normal Sunday no-update cancellation; excluded from failure totals).</td>
-            </tr>
-            <tr>
-              <td><strong>Fastlane Archive / Xcode</strong></td>
-              <td>Step <code>Fastlane Build & Archive</code> failed with exit code 65, 70, or compiler error.</td>
-            </tr>
-            <tr>
-              <td><strong>Secrets & Auth Failures</strong></td>
-              <td>Step <code>Validate Fastlane Secrets</code> or <code>Validate Access Token</code> failed due to missing or expired API keys or Match passwords.</td>
-            </tr>
-            <tr>
-              <td><strong>TestFlight Upload Failure</strong></td>
-              <td>Step <code>Fastlane upload to TestFlight</code> failed during Apple Transporter delivery.</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <h3 style="color: #e2e8f0; font-size: 1.15rem; margin: 1.5rem 0 0.75rem 0;">5. Data Privacy & PII Redaction Protocol</h3>
-      <p>
-        In accordance with research ethics and data protection standards:
-      </p>
-      <ul style="margin-left: 2rem; margin-bottom: 1rem; color: #cbd5e1;">
-        <li><strong>Zero Personal Identifiers:</strong> All GitHub usernames, personal fork URLs, user profile handles, email addresses, and specific commit SHAs were stripped from the published datasets.</li>
-        <li><strong>Aggregated Reproduction Tables:</strong> All data in the repository's <code>data/</code> folder is published purely in aggregate formats (hourly 24h bins, day-of-week sums, monthly trends, and failure category counts).</li>
-        <li><strong>Public Reproducibility:</strong> The methodology and SQL queries are fully documented to allow researchers to reproduce the aggregate figures independently against public GitHub APIs.</li>
-      </ul>
-    </section>
-
-    <!-- Section 7: Builder Recommendations -->
-    <section>
-      <h2>Practical Recommendations for Trio Fork Builders</h2>
-      <div class="callout callout-success">
-        <div class="callout-title">1. Schedule Manual Builds for Night / Early Morning UTC</div>
-        If building manually via the GitHub Actions browser UI, trigger your build between <strong>22:00 UTC and 11:00 UTC</strong> (late US evening or European morning) for a ~99% runner allocation rate.
-      </div>
-      <div class="callout callout-danger">
-        <div class="callout-title">2. Avoid the 14:00 – 17:00 UTC Peak</div>
-        Avoid triggering manual builds between <strong>10:00 AM and 1:00 PM US Eastern</strong>. Approximately 1 in 16 manual builds initiated during this window encounters long queue stalls or runner allocation drops.
-      </div>
-      <div class="callout">
-        <div class="callout-title">3. Preserve Upstream Linux Validation</div>
-        Do not modify the workflow to eliminate the <code>ubuntu-latest</code> pre-check. Running pre-flight checks on Linux prevents forks from congesting macOS pools during weekly automated checks.
-      </div>
-    </section>
+    </main>
 
     <footer>
-      <div>Generated from complete census of <code>nightscout/Trio</code> forks (41,410 runs).</div>
-      <div><a href="./data/summary_metrics.json">Download Summary JSON</a> | <a href="./data/hourly_breakdown.csv">Hourly CSV</a> | <a href="./data/monthly_timeline.csv">Monthly CSV</a></div>
+      <div>
+        <strong>nightscout/Trio CI Census</strong> · Empirical Analysis of GitHub Actions macOS Runner Availability
+      </div>
+      <div>
+        100% Population Study (2,437 Forks · 41,410 Runs) · Zero PII Published
+      </div>
     </footer>
   </div>
+
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. Accessible Tab Switching + URL Hash Sync + Find-in-Page Support
+    // -------------------------------------------------------------------------
+    const tabUsers = document.getElementById('tab-users');
+    const tabDevs = document.getElementById('tab-devs');
+    const panelUsers = document.getElementById('panel-users');
+    const panelDevs = document.getElementById('panel-devs');
+
+    function activateTab(target) {
+      const isDevs = target === 'devs';
+      tabUsers.setAttribute('aria-selected', String(!isDevs));
+      tabDevs.setAttribute('aria-selected', String(isDevs));
+      tabUsers.tabIndex = isDevs ? -1 : 0;
+      tabDevs.tabIndex = isDevs ? 0 : -1;
+
+      if (isDevs) {
+        panelDevs.removeAttribute('hidden');
+        panelUsers.setAttribute('hidden', 'until-found');
+      } else {
+        panelUsers.removeAttribute('hidden');
+        panelDevs.setAttribute('hidden', 'until-found');
+      }
+
+      const desiredHash = isDevs ? '#developers' : '#users';
+      if (window.location.hash !== desiredHash) {
+        history.replaceState(null, '', desiredHash);
+      }
+    }
+
+    panelUsers.addEventListener('beforematch', () => activateTab('users'));
+    panelDevs.addEventListener('beforematch', () => activateTab('devs'));
+
+    tabUsers.addEventListener('click', () => activateTab('users'));
+    tabDevs.addEventListener('click', () => activateTab('devs'));
+
+    [tabUsers, tabDevs].forEach((btn) => {
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+          e.preventDefault();
+          const next = btn === tabUsers ? 'devs' : 'users';
+          activateTab(next);
+          (next === 'devs' ? tabDevs : tabUsers).focus();
+        }
+      });
+    });
+
+    if (window.location.hash === '#developers' || window.location.hash === '#devs') {
+      activateTab('devs');
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. Live Timezone Converter & Current Queue Outlook
+    // -------------------------------------------------------------------------
+    // Recent 4-week empirical failure rate (%) by UTC hour (0..23)
+    const RECENT_HOURLY_RATES = [
+      1.79, 0.00, 0.00, 1.49, 0.00, 2.38,
+      2.33, 3.45, 0.00, 1.32, 0.00, 2.41,
+      5.15, 7.41, 18.40, 21.92, 20.00, 12.32,
+      7.96, 8.99, 10.68, 4.30, 0.00, 2.38
+    ];
+
+    const tzSelect = document.getElementById('tz-select');
+    const safeEl = document.getElementById('tz-safe-window');
+    const avoidEl = document.getElementById('tz-avoid-window');
+    const nowTimeEl = document.getElementById('tz-now-time');
+    const nowStatusEl = document.getElementById('tz-now-status');
+    const nowBoxEl = document.getElementById('tz-now-box');
+    const nowLabelEl = document.getElementById('tz-now-label');
+
+    function formatUtcHourInZone(utcHour, timeZone) {
+      const d = new Date(Date.UTC(2026, 9, 29, utcHour, 0, 0));
+      return new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone
+      }).format(d);
+    }
+
+    function getShortTzName(timeZone) {
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          timeZoneName: 'short'
+        }).formatToParts(new Date());
+        const tzPart = parts.find((p) => p.type === 'timeZoneName');
+        return tzPart ? tzPart.value : timeZone;
+      } catch {
+        return 'Local';
+      }
+    }
+
+    function updateTimezoneAdvisor() {
+      const selected = tzSelect.value;
+      const detectedTz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+      const activeTz = selected === 'local' ? detectedTz : selected;
+      const tzShort = getShortTzName(activeTz);
+
+      // Safe window: 22:00 UTC -> 11:00 UTC
+      const safeStart = formatUtcHourInZone(22, activeTz);
+      const safeEnd = formatUtcHourInZone(11, activeTz);
+      safeEl.textContent = `${safeStart} – ${safeEnd} ${tzShort}`;
+
+      // Avoid window: 14:00 UTC -> 17:00 UTC
+      const avoidStart = formatUtcHourInZone(14, activeTz);
+      const avoidEnd = formatUtcHourInZone(17, activeTz);
+      avoidEl.textContent = `${avoidStart} – ${avoidEnd} ${tzShort}`;
+
+      // Current time & current UTC hour risk
+      const now = new Date();
+      const utcHour = now.getUTCHours();
+      const localNowStr = new Intl.DateTimeFormat('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: activeTz
+      }).format(now);
+      const utcNowStr = `${String(utcHour).padStart(2, '0')}:${String(now.getUTCMinutes()).padStart(2, '0')} UTC`;
+
+      const recentRate = RECENT_HOURLY_RATES[utcHour];
+      nowTimeEl.textContent = `${localNowStr} ${tzShort} (${utcNowStr})`;
+
+      nowBoxEl.className = 'window-box';
+      if (utcHour >= 14 && utcHour <= 16) {
+        nowBoxEl.classList.add('window-avoid');
+        nowLabelEl.style.color = 'var(--danger)';
+        nowLabelEl.textContent = '🔴 Peak Congestion Right Now';
+        nowStatusEl.innerHTML = `Recent Oct 2026 starvation rate at <strong>${String(utcHour).padStart(2, '0')}:00 UTC</strong> is <strong>${recentRate.toFixed(1)}%</strong>. Consider waiting until ${safeStart} ${tzShort}.`;
+      } else if (utcHour >= 22 || utcHour <= 11) {
+        nowBoxEl.classList.add('window-safe');
+        nowLabelEl.style.color = 'var(--success)';
+        nowLabelEl.textContent = '🟢 Safe Window Right Now';
+        nowStatusEl.innerHTML = `Great time to build! Recent Oct 2026 starvation rate at <strong>${String(utcHour).padStart(2, '0')}:00 UTC</strong> is only <strong>${recentRate.toFixed(1)}%</strong>.`;
+      } else {
+        nowBoxEl.classList.add('window-now');
+        nowLabelEl.style.color = 'var(--warning)';
+        nowLabelEl.textContent = '🟡 Moderate Queue Right Now';
+        nowStatusEl.innerHTML = `Recent Oct 2026 starvation rate at <strong>${String(utcHour).padStart(2, '0')}:00 UTC</strong> is <strong>${recentRate.toFixed(1)}%</strong>. Best window opens at ${safeStart} ${tzShort}.`;
+      }
+    }
+
+    tzSelect.addEventListener('change', updateTimezoneAdvisor);
+    updateTimezoneAdvisor();
+  </script>
 </body>
 </html>
